@@ -1,5 +1,4 @@
-import { ScenarioChangeDef, ActivatedDimension } from "../ontology/ontology.js";
-import { CounterfactualAttributeResult } from "../counterfactual/redteam-engine.js";
+import { UniversalScenarioIR, ScenarioChangeDef, ActivatedDimension, CounterfactualAttributeResult } from "../universal-scenario/types.js";
 
 export interface ScenarioAnalysisResult {
   scenarioType: string;
@@ -7,6 +6,7 @@ export interface ScenarioAnalysisResult {
   description: string;
   changes: ScenarioChangeDef[];
   affectedDimensions: ActivatedDimension[];
+  ir: UniversalScenarioIR;
 }
 
 export interface AggregateSimulationSummary {
@@ -30,6 +30,7 @@ export interface AggregateSimulationSummary {
     riskLevel: string;
   }[];
   counterfactuals?: CounterfactualAttributeResult[];
+  ir?: UniversalScenarioIR;
 }
 
 export interface AIExplanationResult {
@@ -40,6 +41,7 @@ export interface AIExplanationResult {
 
 export interface IAIProvider {
   name: string;
+  parseScenario(text: string): Promise<UniversalScenarioIR>;
   analyzeScenario(text: string): Promise<ScenarioAnalysisResult>;
   explainSimulation(summary: AggregateSimulationSummary): Promise<AIExplanationResult>;
   analyzeRedTeam(counterfactuals: CounterfactualAttributeResult[]): Promise<string>;

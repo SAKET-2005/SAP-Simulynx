@@ -183,7 +183,20 @@ sap.ui.define([
           oModel.setProperty("/activeScenario/scenarioType", data.scenarioType);
           oModel.setProperty("/activeScenario/changes", data.changes || []);
           oModel.setProperty("/activeScenario/dimensions", data.affectedDimensions || []);
-          MessageToast.show("Scenario analyzed. Relevant dimensions activated.");
+          oModel.setProperty("/activeScenario/confidence", typeof data.confidence === "number" ? data.confidence : 0.9);
+          oModel.setProperty("/activeScenario/unmappedConcepts", data.unmappedConcepts || "");
+          oModel.setProperty("/activeScenario/clarificationNeeded", data.clarificationNeeded || "");
+          oModel.setProperty("/activeScenario/isSimulatable", data.isSimulatable !== false);
+          oModel.setProperty("/activeScenario/argumentsFor", data.argumentsFor || "");
+          oModel.setProperty("/activeScenario/argumentsAgainst", data.argumentsAgainst || "");
+
+          if (!data.isSimulatable) {
+            MessageBox.warning(
+              "Scenario requires clarification:\n\n" + (data.clarificationNeeded || "Concrete policy parameters are needed before workforce simulation.")
+            );
+          } else {
+            MessageToast.show("Scenario analyzed. Relevant dimensions activated.");
+          }
         })
         .catch(function (err) {
           BusyIndicator.hide();
@@ -213,18 +226,37 @@ sap.ui.define([
         .then(function (res) { return res.json(); })
         .then(function (data) {
           BusyIndicator.hide();
-          oModel.setProperty("/activeSimulation", data);
+          oModel.setProperty("/activeSimulation", {
+            overallImpactScore: data.overallImpactScore,
+            affectedPercentage: data.affectedPercentage,
+            highImpactCount: data.highImpactCount,
+            mediumImpactCount: data.mediumImpactCount,
+            lowImpactCount: data.lowImpactCount,
+            avgFlexibility: data.avgFlexibility,
+            avgAccessibility: data.avgAccessibility,
+            avgWellbeing: data.avgWellbeing,
+            avgAdoption: data.avgAdoption,
+            avgRetentionRisk: data.avgRetentionRisk,
+            executiveSummary: data.executiveSummary,
+            keyFindings: data.keyFindings,
+            questionsForReview: data.questionsForReview,
+            mitigationOptions: data.mitigationOptions,
+            argumentsFor: data.argumentsFor,
+            argumentsAgainst: data.argumentsAgainst,
+            confidence: data.confidence,
+            unmappedConcepts: data.unmappedConcepts,
+            clarificationNeeded: data.clarificationNeeded
+          });
           oModel.setProperty("/latestScenarioTitle", data.scenarioTitle);
           oModel.setProperty("/overallImpact", data.overallImpactScore);
           oModel.setProperty("/affectedPercentage", data.affectedPercentage);
           oModel.setProperty("/selectedKey", "results");
 
           MessageBox.success(
-            "Simulated across 300 universal personas successfully!\nOverall Impact: " +
-              data.overallImpactScore +
-              "%\nAffected Population: " +
-              data.affectedPercentage +
-              "%"
+            "Universal Simulation Complete (Deterministic Engine)!\n\n" +
+              "Simulated Friction Impact: " + data.overallImpactScore + "%\n" +
+              "Affected Population: " + data.affectedPercentage + "%\n\n" +
+              "Results traceable to 300 synthetic personas."
           );
 
           that.refreshAllData();

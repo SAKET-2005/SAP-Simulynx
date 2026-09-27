@@ -1,30 +1,11 @@
 import { PersonaData } from "../persona-generator/types.js";
+import { UniversalDeterministicImpactModel } from "./impact-model.js";
 import {
-  IImpactModel,
-  DeterministicImpactModel,
+  UniversalScenarioIR,
   PersonaSimulationScore,
-  ScenarioSimulationContext,
-} from "./impact-model.js";
+  SimulationCohortResult,
+} from "../universal-scenario/types.js";
 import { GeneratedCohort } from "../cohort-engine/dynamic-cohorts.js";
-
-export interface SimulationCohortResult {
-  cohortKey: string;
-  name: string;
-  description: string;
-  criteriaDescription: string;
-  populationCount: number;
-  populationPercentage: number;
-  averageImpact: number;
-  riskLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  members: {
-    personaId?: string;
-    externalId: string;
-    name: string;
-    matchScore: number;
-    contributingFactors: string;
-    impactScore?: number;
-  }[];
-}
 
 export interface SimulationRunResult {
   totalPersonas: number;
@@ -43,20 +24,20 @@ export interface SimulationRunResult {
 }
 
 export class SimulationEngine {
-  private impactModel: IImpactModel;
+  private impactModel: UniversalDeterministicImpactModel;
 
-  constructor(impactModel: IImpactModel = new DeterministicImpactModel()) {
+  constructor(impactModel = new UniversalDeterministicImpactModel()) {
     this.impactModel = impactModel;
   }
 
-  setImpactModel(model: IImpactModel) {
+  setImpactModel(model: UniversalDeterministicImpactModel) {
     this.impactModel = model;
   }
 
   runSimulation(
     workforce: PersonaData[],
     cohorts: GeneratedCohort[],
-    context: ScenarioSimulationContext
+    ir: UniversalScenarioIR
   ): SimulationRunResult {
     const total = workforce.length;
     if (total === 0) {
@@ -68,7 +49,7 @@ export class SimulationEngine {
     const scoreMap = new Map<string, PersonaSimulationScore>();
 
     for (const p of workforce) {
-      const score = this.impactModel.calculatePersonaImpact(p, context);
+      const score = this.impactModel.calculatePersonaImpact(p, ir);
       score.personaId = p.id;
       personaScores.push(score);
       scoreMap.set(p.externalId, score);
@@ -97,13 +78,13 @@ export class SimulationEngine {
 
       if (s.overallImpactScore >= 65) {
         highCount++;
-      } else if (s.overallImpactScore >= 40) {
+      } else if (s.overallImpactScore >= 35) {
         medCount++;
       } else {
         lowCount++;
       }
 
-      if (s.overallImpactScore >= 40) {
+      if (s.overallImpactScore >= 35) {
         affectedCount++;
       }
     }

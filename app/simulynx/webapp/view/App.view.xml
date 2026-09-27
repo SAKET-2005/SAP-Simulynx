@@ -14,7 +14,7 @@
       <tnt:ToolHeader class="simShellBar">
         <core:Icon src="sap-icon://line-charts" size="1.5rem" color="#ffffff" />
         <Title text="{i18n>appTitle}" level="H2" class="simLogoTitle" />
-        <Text text="{i18n>appSubtitle}" class="simSubtitle" />
+        <Text text="Universal Workforce Simulation Engine" class="simSubtitle" />
         <ToolbarSpacer />
         <ObjectStatus text="SAP BTP / CAP v10" state="Information" inverted="true" class="sapUiTinyMarginEnd" />
         <Button
@@ -64,9 +64,9 @@
                   </VBox>
 
                   <VBox class="simKpiCard">
-                    <Text text="{i18n>kpiImpactTitle}" class="simKpiTitle" />
+                    <Text text="Simulated Workforce Impact" class="simKpiTitle" />
                     <Title text="{appState>/overallImpact}%" level="H1" class="simKpiValue" />
-                    <Text text="{i18n>kpiImpactSub}" class="simKpiSub" />
+                    <Text text="Average simulated friction score" class="simKpiSub" />
                   </VBox>
 
                   <VBox class="simKpiCard">
@@ -76,16 +76,21 @@
                   </VBox>
                 </layout:Grid>
 
-                <!-- Quick Simulation Chips -->
-                <Panel headerText="Explore Organizational Decisions" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
-                  <HBox wrap="Wrap" alignItems="Center">
-                    <Text text="Benchmark Scenarios:" class="sapUiTinyMarginEnd" />
-                    <Button text="2 -> 5 Office Days" press=".onSelectPresetScenario" custom:text="Our company is moving from 2 mandatory office days to 5." class="sapUiTinyMarginEnd" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
-                    <Button text="Office Relocation" press=".onSelectPresetScenario" custom:text="Move the company office to a new location that increases average commute time." class="sapUiTinyMarginEnd" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
-                    <Button text="AI Coding Assistants" press=".onSelectPresetScenario" custom:text="Introduce an AI coding assistant across engineering teams." class="sapUiTinyMarginEnd" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
-                    <Button text="Performance Monitoring" press=".onSelectPresetScenario" custom:text="Introduce continuous AI-assisted performance monitoring." class="sapUiTinyMarginEnd" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
-                    <Button text="Mandatory Friday" press=".onSelectPresetScenario" custom:text="Make Friday a mandatory office day." class="sapUiTinyMarginEnd" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
-                  </HBox>
+                <!-- Quick Benchmark Scenarios -->
+                <Panel headerText="Universal Decision Support Benchmarks" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
+                  <VBox>
+                    <Text text="Select any organizational decision to test through the Universal Scenario Engine:" class="sapUiTinyMarginBottom" />
+                    <HBox wrap="Wrap" alignItems="Center">
+                      <Button text="A: 2 -> 5 Office Days" press=".onSelectPresetScenario" custom:text="Our company is moving from 2 mandatory office days to 5." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="B: Virtual Cameras" press=".onSelectPresetScenario" custom:text="I don't agree with mandatory cameras during virtual meetings. What might be the impact?" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="C: Relocation (+20km)" press=".onSelectPresetScenario" custom:text="We want to move our office 20 km farther from the city." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="D: AI Coding Assistants" press=".onSelectPresetScenario" custom:text="We want to introduce AI coding assistants across engineering." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="E: Continuous AI Monitoring" press=".onSelectPresetScenario" custom:text="We want continuous AI-assisted performance monitoring." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="F: 4-Day Workweek" press=".onSelectPresetScenario" custom:text="Should we introduce a four-day workweek?" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="G: Working Hours" press=".onSelectPresetScenario" custom:text="How would changing our working hours affect employees?" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="H: Vague Culture Inquiry" press=".onSelectPresetScenario" custom:text="Would changing our culture improve productivity?" type="Ghost" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                    </HBox>
+                  </VBox>
                 </Panel>
 
                 <!-- Two-Column Overview: Cohorts & Sensitive Attributes -->
@@ -109,13 +114,13 @@
                   </Panel>
 
                   <!-- Sensitive Attributes Card -->
-                  <Panel headerText="Attributes Requiring Investigation (Red Team)" class="sapUiNoContentPadding">
+                  <Panel headerText="Attributes Materially Influencing Outcomes (Red Team)" class="sapUiNoContentPadding">
                     <List items="{appState>/sensitiveAttributes}" noDataText="Counterfactual analysis will appear here.">
                       <CustomListItem>
                         <HBox justifyContent="SpaceBetween" alignItems="Center" class="sapUiSmallMargin">
                           <VBox>
                             <Title text="{appState>displayName}" level="H4" />
-                            <Text text="Simulated sensitivity delta: +{appState>difference} points" class="sapUiExtraTinyMarginTop" />
+                            <Text text="Isolated sensitivity delta: +{appState>difference} points" class="sapUiExtraTinyMarginTop" />
                           </VBox>
                           <ObjectStatus
                             text="{appState>status}"
@@ -132,7 +137,7 @@
                   <Table items="{appState>/recentSimulations}" noDataText="No past simulations.">
                     <columns>
                       <Column><Text text="Scenario Title" /></Column>
-                      <Column><Text text="Type" /></Column>
+                      <Column><Text text="Intent" /></Column>
                       <Column><Text text="Run At" /></Column>
                       <Column hAlign="End"><Text text="Workforce Impact" /></Column>
                       <Column hAlign="End"><Text text="Affected %" /></Column>
@@ -164,7 +169,7 @@
                 icon="sap-icon://group">
                 <VBox class="sapUiSmallMarginBottom">
                   <Toolbar>
-                    <Title text="Universal Digital Workforce (300 Personas)" level="H3" />
+                    <Title text="Universal Digital Workforce (300 Synthetic Personas)" level="H3" />
                     <ToolbarSpacer />
                     <SearchField width="260px" placeholder="Search name, role, city..." liveChange=".onWorkforceSearch" />
                     <Select id="deptFilter" change=".onWorkforceFilter" class="sapUiTinyMarginEnd">
@@ -178,17 +183,17 @@
                       </items>
                     </Select>
                   </Toolbar>
-                  
-                  <Table id="workforceTable" items="{appState>/personas}" growing="true" growingThreshold="25" noDataText="Loading workforce...">
+
+                  <Table id="workforceTable" items="{appState>/personas}" growing="true" growingThreshold="25">
                     <columns>
                       <Column width="5rem"><Text text="ID" /></Column>
                       <Column width="11rem"><Text text="Persona" /></Column>
-                      <Column width="14rem"><Text text="Role &amp; Department" /></Column>
-                      <Column width="12rem"><Text text="Location &amp; Commute" /></Column>
-                      <Column width="11rem"><Text text="Life Context" /></Column>
-                      <Column width="8rem"><Text text="Remote / Office" /></Column>
+                      <Column width="12rem"><Text text="Role / Department" /></Column>
+                      <Column width="11rem"><Text text="Location &amp; Commute" /></Column>
+                      <Column width="9rem"><Text text="Life Context" /></Column>
+                      <Column width="8rem"><Text text="Work Style" /></Column>
                       <Column width="8rem"><Text text="Accessibility" /></Column>
-                      <Column width="6rem" hAlign="Center"><Text text="Inspect" /></Column>
+                      <Column width="5rem" hAlign="Center"><Text text="Inspect" /></Column>
                     </columns>
                     <items>
                       <ColumnListItem>
@@ -228,8 +233,8 @@
                 text="{i18n>navCreate}"
                 icon="sap-icon://create">
                 <VBox class="simPromptBox sapUiSmallMarginBottom">
-                  <Title text="What organizational change would you like to simulate?" level="H2" class="simPromptTitle" />
-                  <Text text="Enter a policy decision in natural language. The AI Scenario Analyzer extracts structured changes and activates relevant workforce ontology dimensions." class="sapUiTinyMarginBottom" />
+                  <Title text="Universal Workforce Simulation" level="H2" class="simPromptTitle" />
+                  <Text text="Enter any workplace policy, structural change, or inquiry in natural language. The Universal Engine parses semantics into Intermediate Representation (IR), maps dimensions dynamically, and computes deterministic workforce impact." class="sapUiTinyMarginBottom" />
 
                   <TextArea
                     id="scenarioInput"
@@ -239,27 +244,68 @@
                     placeholder="e.g. Our company is moving from 2 mandatory office days to 5."
                     class="sapUiSmallMarginBottom" />
 
+                  <VBox class="sapUiSmallMarginBottom">
+                    <Text text="Demo Scenarios:" class="simKpiSub sapUiExtraTinyMarginBottom" />
                     <HBox wrap="Wrap">
                       <Button text="2 -> 5 Office Days" press=".onFillSampleScenario" custom:prompt="Our company is moving from 2 mandatory office days to 5." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
-                      <Button text="Relocation" press=".onFillSampleScenario" custom:prompt="Move the company office to a new location that increases average commute time." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
-                      <Button text="AI Assistant" press=".onFillSampleScenario" custom:prompt="Introduce an AI coding assistant across engineering teams." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
-                      <Button text="Candidate: Cyber -> SWE" press=".onFillSampleScenario" custom:prompt="I am applying for a Software Engineering Intern role after completing my internship as a Cyber Security Intern. After completing this internship I realised that I am not a good fit for this domain as I enjoy coding more and I would be a better fit for the Software Engineering role. What are my chances of being hired if I have the required skills and am able to code in all the major langueages required by the company." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="Cameras Policy" press=".onFillSampleScenario" custom:prompt="I don't agree with mandatory cameras during virtual meetings. What might be the impact?" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="Relocation 20km" press=".onFillSampleScenario" custom:prompt="We want to move our office 20 km farther from the city." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="AI Coding Assistants" press=".onFillSampleScenario" custom:prompt="We want to introduce AI coding assistants across engineering." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="AI Monitoring" press=".onFillSampleScenario" custom:prompt="We want continuous AI-assisted performance monitoring." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="Four-Day Workweek" press=".onFillSampleScenario" custom:prompt="Should we introduce a four-day workweek?" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="Working Hours" press=".onFillSampleScenario" custom:prompt="How would changing our working hours affect employees?" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="Culture &amp; Productivity (Vague)" press=".onFillSampleScenario" custom:prompt="Would changing our culture improve productivity?" type="Ghost" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
                     </HBox>
-                    <HBox>
-                      <Button text="Analyze Scenario" type="Emphasized" icon="sap-icon://search" press=".onAnalyzeScenario" class="sapUiTinyMarginEnd" />
-                      <Button text="Run Simulation" type="Accept" icon="sap-icon://begin" press=".onRunDirectSimulation" />
-                    </HBox>
+                  </VBox>
+
+                  <HBox>
+                    <Button text="Analyze Scenario" type="Emphasized" icon="sap-icon://search" press=".onAnalyzeScenario" class="sapUiTinyMarginEnd" />
+                    <Button text="Run Simulation" type="Accept" icon="sap-icon://begin" press=".onRunDirectSimulation" enabled="{appState>/activeScenario/isSimulatable}" />
                   </HBox>
                 </VBox>
 
-                <!-- Analysis Results Panel (Detected Changes & Ontology Dimensions) -->
-                <Panel headerText="Scenario Understanding &amp; Attribute Detection" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
+                <!-- Clarification Warning Notice (for Vague/Abstract Inquiries) -->
+                <MessageStrip
+                  text="{appState>/activeScenario/clarificationNeeded}"
+                  type="Warning"
+                  showIcon="true"
+                  visible="{= !!${appState>/activeScenario/clarificationNeeded} }"
+                  class="sapUiSmallMarginBottom" />
+
+                <!-- Unmapped Concepts Notice -->
+                <MessageStrip
+                  text="{= 'Unmapped Concepts Detected: ' + ${appState>/activeScenario/unmappedConcepts} + ' (Simulating against closest baseline dimensions).' }"
+                  type="Information"
+                  showIcon="true"
+                  visible="{= !!${appState>/activeScenario/unmappedConcepts} &amp;&amp; ${appState>/activeScenario/isSimulatable} }"
+                  class="sapUiSmallMarginBottom" />
+
+                <!-- Analysis Results Panel (Intermediate Representation & Dimensions) -->
+                <Panel headerText="Scenario Understanding &amp; Intermediate Representation (IR)" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
                   <VBox class="sapUiSmallMargin">
-                    <Title text="{appState>/activeScenario/title}" level="H3" class="sapUiTinyMarginBottom" />
+                    <HBox justifyContent="SpaceBetween" alignItems="Center" class="sapUiTinyMarginBottom">
+                      <Title text="{appState>/activeScenario/title}" level="H3" />
+                      <ObjectStatus
+                        text="{= 'Confidence: ' + Math.round(${appState>/activeScenario/confidence} * 100) + '%'}"
+                        state="{= ${appState>/activeScenario/confidence} >= 0.7 ? 'Success' : ${appState>/activeScenario/confidence} >= 0.4 ? 'Warning' : 'Error'}"
+                        inverted="true" />
+                    </HBox>
                     <Text text="{appState>/activeScenario/description}" class="sapUiSmallMarginBottom" />
 
+                    <!-- Balanced Perspective: Arguments For vs Arguments Against -->
+                    <layout:Grid defaultSpan="XL6 L6 M12 S12" class="sapUiSmallMarginBottom">
+                      <VBox class="simKpiCard">
+                        <Title text="Arguments For (Potential Benefits)" level="H4" class="sapUiTinyMarginBottom" />
+                        <Text text="{appState>/activeScenario/argumentsFor}" wrapping="true" />
+                      </VBox>
+                      <VBox class="simKpiCard">
+                        <Title text="Arguments Against (Friction &amp; Risks)" level="H4" class="sapUiTinyMarginBottom" />
+                        <Text text="{appState>/activeScenario/argumentsAgainst}" wrapping="true" />
+                      </VBox>
+                    </layout:Grid>
+
                     <!-- Detected Parameter Changes -->
-                    <Title text="Detected Policy Changes" level="H4" class="sapUiSmallMarginTop" />
+                    <Title text="Extracted Parameter Changes" level="H4" class="sapUiSmallMarginTop" />
                     <List items="{appState>/activeScenario/changes}" class="sapUiSmallMarginBottom">
                       <CustomListItem>
                         <HBox alignItems="Center" class="sapUiTinyMargin">
@@ -271,13 +317,13 @@
                     </List>
 
                     <!-- Activated Dimensions -->
-                    <Title text="Activated Workforce Dimensions (Ontology Layer)" level="H4" class="sapUiSmallMarginTop" />
+                    <Title text="Activated Workforce Dimensions (Concept Ontology)" level="H4" class="sapUiSmallMarginTop" />
                     <List items="{appState>/activeScenario/dimensions}">
                       <CustomListItem>
                         <VBox class="sapUiSmallMargin">
                           <HBox justifyContent="SpaceBetween" alignItems="Center">
                             <Title text="{appState>dimensionName}" level="H4" />
-                            <ObjectStatus text="Weight: {appState>sensitivityWeight}" state="None" />
+                            <ObjectStatus text="Sensitivity: {appState>sensitivityWeight}" state="None" />
                           </HBox>
                           <Text text="{appState>rationale}" class="sapUiExtraTinyMarginTop" />
                           <Text text="Mapped Persona Attributes: {appState>mappedAttributes}" class="simKpiSub sapUiExtraTinyMarginTop" />
@@ -290,6 +336,7 @@
                       type="Emphasized"
                       icon="sap-icon://begin"
                       press=".onRunDirectSimulation"
+                      enabled="{appState>/activeScenario/isSimulatable}"
                       class="sapUiMediumMarginTop" />
                   </VBox>
                 </Panel>
@@ -341,37 +388,41 @@
                 <Panel headerText="Workforce Simulation Intelligence" class="sapUiSmallMarginBottom">
                   <layout:Grid defaultSpan="XL2 L2 M4 S6" class="sapUiSmallMarginBottom">
                     <VBox class="simKpiCard">
-                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_hiring' ? 'Hiring Feasibility' : 'Overall Impact'}" class="simKpiTitle" />
+                      <Text text="Overall Impact" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/overallImpactScore}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_hiring' ? 'Benchmark Match' : 'Affected %'}" class="simKpiTitle" />
+                      <Text text="Affected %" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/affectedPercentage}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_hiring' ? 'Skill Alignment' : 'Flexibility'}" class="simKpiTitle" />
+                      <Text text="Flexibility Index" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/avgFlexibility}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_hiring' ? 'Security Synergy' : 'Accessibility'}" class="simKpiTitle" />
+                      <Text text="Accessibility Index" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/avgAccessibility}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_hiring' ? 'Role Motivation' : 'Wellbeing'}" class="simKpiTitle" />
+                      <Text text="Wellbeing Index" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/avgWellbeing}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_hiring' ? 'Flight Risk' : 'Retention Risk'}" class="simKpiTitle" />
+                      <Text text="Retention Risk" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/avgRetentionRisk}%" level="H2" class="simKpiValue" />
                     </VBox>
                   </layout:Grid>
 
-                  <!-- AI Result Explanation Box -->
+                  <!-- AI Result Explanation Box (Decision Support) -->
                   <VBox class="simDecisionBox sapUiSmallMarginTop">
-                    <Title text="Executive Decision Intelligence" level="H3" class="sapUiTinyMarginBottom" />
+                    <Title text="Decision Support Summary" level="H3" class="sapUiTinyMarginBottom" />
                     <Text text="{appState>/activeSimulation/executiveSummary}" class="sapUiSmallMarginBottom" />
                     <Title text="Key Findings" level="H4" class="sapUiTinyMarginBottom" />
-                    <Text text="{appState>/activeSimulation/keyFindings}" />
+                    <Text text="{appState>/activeSimulation/keyFindings}" class="sapUiSmallMarginBottom" />
+                    <Title text="Actionable Mitigation Options" level="H4" class="sapUiTinyMarginBottom" />
+                    <Text text="{appState>/activeSimulation/mitigationOptions}" class="sapUiSmallMarginBottom" />
+                    <Title text="Questions for Human Review" level="H4" class="sapUiTinyMarginBottom" />
+                    <Text text="{appState>/activeSimulation/questionsForReview}" />
                   </VBox>
                 </Panel>
 
@@ -431,7 +482,7 @@
                       <Column width="9rem" hAlign="End"><Text text="Original Impact" /></Column>
                       <Column width="9rem" hAlign="End"><Text text="Counterfactual" /></Column>
                       <Column width="7rem" hAlign="End"><Text text="Difference" /></Column>
-                      <Column width="16rem"><Text text="Status" /></Column>
+                      <Column width="16rem"><Text text="Sensitivity Assessment" /></Column>
                       <Column width="22rem"><Text text="Actionable Rationale" /></Column>
                     </columns>
                     <items>
@@ -456,7 +507,7 @@
                 text="{i18n>navDecision}"
                 icon="sap-icon://decision">
                 
-                <Panel headerText="Executive Briefing for Human Decision-Makers" class="sapUiSmallMarginBottom">
+                <Panel headerText="Decision Support Summary (Human Decision-Maker Support)" class="sapUiSmallMarginBottom">
                   <VBox class="sapUiSmallMargin">
 
                     <!-- Section 1: What Changed -->
@@ -468,7 +519,7 @@
                     <!-- Section 2: Who is Most Affected -->
                     <VBox class="simDecisionBox">
                       <Title text="2. Potentially Affected Groups: Who is Most Affected?" level="H3" class="sapUiTinyMarginBottom" />
-                      <Text text="Friction is concentrated in the following dynamic cohorts:" class="sapUiTinyMarginBottom" />
+                      <Text text="Simulated friction is most concentrated in the following dynamic cohorts:" class="sapUiTinyMarginBottom" />
                       <List items="{appState>/topCohorts}">
                         <CustomListItem>
                           <HBox alignItems="Center" class="sapUiTinyMargin">
@@ -480,17 +531,24 @@
                       </List>
                     </VBox>
 
-                    <!-- Section 3: Why -->
+                    <!-- Section 3: Trade-Off Analysis -->
                     <VBox class="simDecisionBox">
-                      <Title text="3. Key Factors: Why?" level="H3" class="sapUiTinyMarginBottom" />
-                      <Text text="• Transit Duration Overhead: High commute personas experience amplified transit friction without corresponding collaborative density." class="sapUiTinyMarginBottom" />
-                      <Text text="• Rigid Scheduling Collision: Caregiving responsibilities clash directly with non-negotiable in-office physical presence." class="sapUiTinyMarginBottom" />
-                      <Text text="• Environmental &amp; Sensory Strain: Accessibility-sensitive employees face transit stress and open-plan acoustic load." />
+                      <Title text="3. Key Trade-Offs: Balanced Considerations" level="H3" class="sapUiTinyMarginBottom" />
+                      <layout:Grid defaultSpan="XL6 L6 M12 S12">
+                        <VBox>
+                          <Title text="Organizational Benefits" level="H5" class="sapUiExtraTinyMarginBottom" />
+                          <Text text="{appState>/activeSimulation/argumentsFor}" />
+                        </VBox>
+                        <VBox>
+                          <Title text="Workforce Friction &amp; Risks" level="H5" class="sapUiExtraTinyMarginBottom" />
+                          <Text text="{appState>/activeSimulation/argumentsAgainst}" />
+                        </VBox>
+                      </layout:Grid>
                     </VBox>
 
                     <!-- Section 4: Counterfactual Findings -->
                     <VBox class="simDecisionBox">
-                      <Title text="4. Counterfactual Findings: What Attributes Materially Change the Outcome?" level="H3" class="sapUiTinyMarginBottom" />
+                      <Title text="4. Counterfactual Findings: What Attributes Materially Influence Outcomes?" level="H3" class="sapUiTinyMarginBottom" />
                       <List items="{appState>/sensitiveAttributes}">
                         <CustomListItem>
                           <HBox alignItems="Center" class="sapUiTinyMargin">
@@ -502,16 +560,22 @@
                       </List>
                     </VBox>
 
-                    <!-- Section 5: Questions for Review -->
+                    <!-- Section 5: Mitigation Options -->
                     <VBox class="simDecisionBox">
-                      <Title text="5. Questions for Human Review: What Should Leaders Investigate?" level="H3" class="sapUiTinyMarginBottom" />
+                      <Title text="5. Potential Mitigation Options" level="H3" class="sapUiTinyMarginBottom" />
+                      <Text text="{appState>/activeSimulation/mitigationOptions}" />
+                    </VBox>
+
+                    <!-- Section 6: Questions for Review -->
+                    <VBox class="simDecisionBox">
+                      <Title text="6. Questions for Human Review" level="H3" class="sapUiTinyMarginBottom" />
                       <Text text="{appState>/activeSimulation/questionsForReview}" />
                     </VBox>
 
                     <!-- Ethical Principle Statement -->
                     <VBox class="simDisclaimerBar sapUiMediumMarginTop">
-                      <Title text="Human-in-the-Loop Decision Support" level="H4" class="sapUiTinyMarginBottom" />
-                      <Text text="Simulynx provides decision support. Final organizational decisions remain with human decision-makers." />
+                      <Title text="Human-in-the-Loop Principle" level="H4" class="sapUiTinyMarginBottom" />
+                      <Text text="Simulynx is a digital workforce wind tunnel for organizational decisions. It does not dictate what decision leaders must make. Final policy choices remain exclusively with human leadership." />
                     </VBox>
                   </VBox>
                 </Panel>

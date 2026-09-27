@@ -1,11 +1,12 @@
 import cds from "@sap/cds";
 import { generateWorkforce } from "../lib/persona-generator/generator.js";
-import { mapScenarioToOntology } from "../lib/ontology/ontology.js";
 import { generateDynamicCohorts } from "../lib/cohort-engine/dynamic-cohorts.js";
 import { SimulationEngine } from "../lib/simulation-engine/simulation-engine.js";
 import { RedTeamEngine } from "../lib/counterfactual/redteam-engine.js";
 import { PersonaData } from "../lib/persona-generator/types.js";
 import { getAIProvider } from "../lib/ai/index.js";
+import { parseScenarioToIR } from "../lib/universal-scenario/universal-parser.js";
+import { buildUniversalOutputContract } from "../lib/universal-scenario/decision-support.js";
 import crypto from "node:crypto";
 
 const { SELECT, INSERT, UPDATE, DELETE } = cds.ql;
@@ -100,7 +101,7 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
       const recentSimulations: any[] = [];
       for (const sim of recentList) {
         let scTitle = "Policy Scenario";
-        let scType = "work_model_change";
+        let scType = "policy_evaluation";
         if (sim.scenario_ID) {
           const sc = await SELECT.one.from(Scenarios).where({ ID: sim.scenario_ID });
           if (sc) {
@@ -142,6 +143,7 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
       }
 
       const analysis = await aiProvider.analyzeScenario(scenarioText);
+      const ir = analysis.ir || parseScenarioToIR(scenarioText);
       const scenarioId = crypto.randomUUID();
 
       // Save scenario
@@ -188,6 +190,12 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
           rationale: d.rationale,
           mappedAttributes: d.mappedAttributes.join(", "),
         })),
+        confidence: ir.confidence,
+        unmappedConcepts: (ir.unmappedConcepts || []).join(", "),
+        clarificationNeeded: ir.clarificationNeeded || "",
+        isSimulatable: ir.isSimulatable,
+        argumentsFor: (ir.argumentsFor || []).join("\n• "),
+        argumentsAgainst: (ir.argumentsAgainst || []).join("\n• "),
       };
     });
 
@@ -242,6 +250,56 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
       }
 
       return await executeSimulation(scenarioId, this);
+    });
+
+    /**
+     * evaluateUniversalScenario(scenarioText)
+     * Direct scenario-agnostic evaluation returning the full UniversalOutputContract
+     */
+    this.on("evaluateUniversalScenario", async (req) => {
+      const { scenarioText } = req.data;
+      if (!scenarioText || !scenarioText.trim()) {
+        return req.error(400, "Scenario text is required.");
+      }
+
+      const ir = await aiProvider.parseScenario(scenarioText);
+
+      // Ensure workforce exists
+      let personas = await SELECT.from(Personas);
+      if (!personas || personas.length === 0) {
+        const generated = generateWorkforce(300);
+        for (let i = 0; i < generated.length; i += 100) {
+          const chunk = generated.slice(i, i + 100).map((p) => ({
+            ID: crypto.randomUUID(),
+            ...p,
+          }));
+          await INSERT.into(Personas).entries(chunk);
+        }
+        personas = await SELECT.from(Personas);
+      }
+
+      // 1. Dynamic Cohorts
+      const cohorts = generateDynamicCohorts(
+        ir.affectedDimensions,
+        personas as unknown as PersonaData[]
+      );
+
+      // 2. Deterministic Simulation
+      const simRun = simulationEngine.runSimulation(
+        personas as unknown as PersonaData[],
+        cohorts,
+        ir
+      );
+
+      // 3. Counterfactual Red-Team
+      const counterfactuals = redTeamEngine.runCounterfactualAnalysis(
+        personas as unknown as PersonaData[],
+        ir
+      );
+
+      // 4. Universal Output Contract
+      const contract = buildUniversalOutputContract(ir, simRun, counterfactuals);
+      return JSON.stringify(contract, null, 2);
     });
 
     /**
@@ -305,7 +363,7 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
     });
 
     /**
-     * Helper to execute simulation logic
+     * Helper to execute simulation logic using the Universal Scenario Engine
      */
     async function executeSimulation(scenarioId: string, srv: SimulynxService) {
       const scenario = await SELECT.one.from(Scenarios).where({ ID: scenarioId });
@@ -327,81 +385,31 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
         personas = await SELECT.from(Personas);
       }
 
-      // Load dimensions
-      const rawDimensions = await SELECT.from(ScenarioDimensions).where({ scenario_ID: scenarioId });
-      const activatedDimensions = rawDimensions.map((d: any) => ({
-        dimensionKey: d.dimensionKey,
-        dimensionName: d.dimensionName,
-        sensitivityWeight: Number(d.sensitivityWeight),
-        rationale: d.rationale,
-        mappedAttributes: (d.mappedAttributes || "").split(",").map((s: string) => s.trim()),
-      }));
+      // Parse prompt into Universal Scenario Intermediate Representation (IR)
+      const promptText = scenario.rawScenarioText || scenario.description || scenario.title;
+      const ir = parseScenarioToIR(promptText);
 
-      // Parse changes
-      let changes: any[] = [];
-      try {
-        changes = JSON.parse(scenario.changesJson || "[]");
-      } catch {
-        changes = [];
-      }
-
-      // Compute universal ontology mapping to obtain attributePressures
-      const ontologyMapping = mapScenarioToOntology(
-        scenario.scenarioType,
-        changes,
-        scenario.rawScenarioText || scenario.description
-      );
-
-      const simContext = {
-        scenarioType: scenario.scenarioType,
-        changes,
-        activatedDimensions: activatedDimensions.length > 0 ? activatedDimensions : ontologyMapping.activatedDimensions,
-        attributePressures: ontologyMapping.attributePressures,
-        rawScenarioText: scenario.rawScenarioText || scenario.description,
-      };
-
-      // 1. Dynamic Cohorts
+      // 1. Dynamic Cohorts based on activated dimensions
       const generatedCohorts = generateDynamicCohorts(
-        activatedDimensions,
+        ir.affectedDimensions,
         personas as unknown as PersonaData[]
       );
 
-      // 2. Simulation Engine
+      // 2. Simulation Engine (Deterministic calculation based on attribute pressures)
       const simRun = simulationEngine.runSimulation(
         personas as unknown as PersonaData[],
         generatedCohorts,
-        simContext
+        ir
       );
 
-      // 3. Red Team Engine
+      // 3. Red Team Engine (Counterfactual sensitivity)
       const redTeamResults = redTeamEngine.runCounterfactualAnalysis(
         personas as unknown as PersonaData[],
-        simContext
+        ir
       );
 
-      // 4. AI Explanation
-      const aiSummary = await aiProvider.explainSimulation({
-        scenarioTitle: scenario.title,
-        scenarioType: scenario.scenarioType,
-        totalPersonas: simRun.totalPersonas,
-        overallImpactScore: simRun.overallImpactScore,
-        affectedPercentage: simRun.affectedPercentage,
-        highImpactCount: simRun.highImpactCount,
-        mediumImpactCount: simRun.mediumImpactCount,
-        lowImpactCount: simRun.lowImpactCount,
-        avgFlexibilityScore: simRun.avgFlexibilityScore,
-        avgAccessibilityScore: simRun.avgAccessibilityScore,
-        avgWellbeingScore: simRun.avgWellbeingScore,
-        avgAdoptionScore: simRun.avgAdoptionScore,
-        avgRetentionRiskScore: simRun.avgRetentionRiskScore,
-        topCohorts: simRun.cohortResults.slice(0, 5).map((c) => ({
-          name: c.name,
-          population: c.populationCount,
-          averageImpact: c.averageImpact,
-          riskLevel: c.riskLevel,
-        })),
-        counterfactuals: redTeamResults,
-      });
+      // 4. Build Universal Output Contract
+      const contract = buildUniversalOutputContract(ir, simRun, redTeamResults);
 
       const simulationId = crypto.randomUUID();
       const runAt = new Date().toISOString();
@@ -423,9 +431,9 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
         avgAdoptionScore: simRun.avgAdoptionScore,
         avgRetentionRiskScore: simRun.avgRetentionRiskScore,
         status: "COMPLETED",
-        aiExecutiveSummary: aiSummary.executiveSummary,
-        aiKeyFindings: aiSummary.keyFindings.join("\n• "),
-        aiQuestionsForReview: aiSummary.questionsForReview.join("\n• "),
+        aiExecutiveSummary: contract.decisionSupport.summary,
+        aiKeyFindings: (contract.decisionSupport.keyFindings || []).join("\n• "),
+        aiQuestionsForReview: (contract.decisionSupport.questionsForHumanReview || []).join("\n• "),
       });
 
       // Update scenario status
@@ -465,7 +473,7 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
         }
       }
 
-      // Persist Individual Simulation Results
+      // Persist Individual Simulation Results with transparent drivers
       const resBatch: any[] = [];
       for (const res of simRun.personaResults) {
         const p = personas.find((x: any) => x.externalId === res.externalId);
@@ -525,9 +533,15 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
         avgWellbeing: simRun.avgWellbeingScore,
         avgAdoption: simRun.avgAdoptionScore,
         avgRetentionRisk: simRun.avgRetentionRiskScore,
-        executiveSummary: aiSummary.executiveSummary,
-        keyFindings: aiSummary.keyFindings.join("\n• "),
-        questionsForReview: aiSummary.questionsForReview.join("\n• "),
+        executiveSummary: contract.decisionSupport.summary,
+        keyFindings: (contract.decisionSupport.keyFindings || []).join("\n• "),
+        questionsForReview: (contract.decisionSupport.questionsForHumanReview || []).join("\n• "),
+        mitigationOptions: (contract.decisionSupport.mitigationOptions || []).join("\n• "),
+        argumentsFor: (ir.argumentsFor || []).join("\n• "),
+        argumentsAgainst: (ir.argumentsAgainst || []).join("\n• "),
+        confidence: ir.confidence,
+        unmappedConcepts: ir.unmappedConcepts.join(", "),
+        clarificationNeeded: ir.clarificationNeeded || "",
       };
     }
 
@@ -554,7 +568,7 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
         await INSERT.into(Personas).entries(chunk);
       }
 
-      // 2. Seed the 5 standard demo scenarios
+      // 2. Seed standard benchmark scenarios using Universal Scenario Engine
       const sampleScenarios = [
         {
           text: "Our company is moving from 2 mandatory office days to 5.",
@@ -562,23 +576,33 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
           isPrimary: true,
         },
         {
-          text: "Move the company office to a new location that increases average commute time.",
-          title: "Suburban Campus Relocation",
+          text: "We want to move our office 20 km farther from the city.",
+          title: "Suburban Campus Relocation (20km)",
           isPrimary: false,
         },
         {
-          text: "Introduce an AI coding assistant across engineering teams.",
-          title: "Enterprise AI Coding Assistant Rollout",
+          text: "I don't agree with mandatory cameras during virtual meetings. What might be the impact?",
+          title: "Virtual Meeting Camera Policy",
           isPrimary: false,
         },
         {
-          text: "Introduce continuous AI-assisted performance monitoring.",
+          text: "We want to introduce AI coding assistants across engineering.",
+          title: "AI Coding Assistant Rollout",
+          isPrimary: false,
+        },
+        {
+          text: "We want continuous AI-assisted performance monitoring.",
           title: "Continuous AI Performance Monitoring",
           isPrimary: false,
         },
         {
-          text: "Make Friday a mandatory office day.",
-          title: "Mandatory Friday In-Office Policy",
+          text: "Should we introduce a four-day workweek?",
+          title: "Four-Day Workweek Policy",
+          isPrimary: false,
+        },
+        {
+          text: "How would changing our working hours affect employees?",
+          title: "Working Hours Schedule Adjustment",
           isPrimary: false,
         },
       ];
@@ -622,7 +646,7 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
       }
 
       return {
-        message: "Successfully seeded Simulynx with 300 synthetic personas and 5 benchmark scenarios.",
+        message: "Successfully seeded Simulynx with 300 synthetic personas and universal benchmark scenarios.",
         personaCount: 300,
         scenarioCount: sampleScenarios.length,
         simulationCount: 1,

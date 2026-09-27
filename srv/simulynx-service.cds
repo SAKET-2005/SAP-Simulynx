@@ -72,6 +72,12 @@ service SimulynxService @(path: '/odata/v4/simulynx') {
     rawScenarioText      : LargeString;
     changes              : array of ScenarioChange;
     affectedDimensions   : array of DimensionSummary;
+    confidence           : Decimal(3,2);
+    unmappedConcepts     : String;
+    clarificationNeeded  : LargeString;
+    isSimulatable        : Boolean;
+    argumentsFor         : LargeString;
+    argumentsAgainst     : LargeString;
   }
 
   type SimulationSummary {
@@ -94,6 +100,12 @@ service SimulynxService @(path: '/odata/v4/simulynx') {
     executiveSummary     : LargeString;
     keyFindings          : LargeString;
     questionsForReview   : LargeString;
+    mitigationOptions    : LargeString;
+    argumentsFor         : LargeString;
+    argumentsAgainst     : LargeString;
+    confidence           : Decimal(3,2);
+    unmappedConcepts     : String;
+    clarificationNeeded  : LargeString;
   }
 
   type CounterfactualResultItem {
@@ -134,6 +146,10 @@ service SimulynxService @(path: '/odata/v4/simulynx') {
   action runSimulation(
     scenarioId: UUID
   ) returns SimulationSummary;
+
+  action evaluateUniversalScenario(
+    scenarioText: LargeString
+  ) returns LargeString;
 
   action runCounterfactual(
     simulationId: UUID,

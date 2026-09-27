@@ -115,73 +115,88 @@ export class SapAIProvider implements IAIProvider {
     }
   }
 
-  async analyzeScenario(text: string): Promise<ScenarioAnalysisResult> {
+  async parseScenario(text: string): Promise<UniversalScenarioIR> {
     if (!this.isConfigured) {
-      return this.fallback.analyzeScenario(text);
+      return this.fallback.parseScenario(text);
     }
 
     try {
       const token = await this.getAccessToken();
-      if (!token) {
-        return this.fallback.analyzeScenario(text);
-      }
+      if (!token) return this.fallback.parseScenario(text);
 
       const endpoint = `${this.apiEndpoint?.replace(/\/+$/, "")}/v2/inference/deployments/${this.deploymentId}/chat/completions?api-version=2023-05-15`;
-      
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           "AI-Resource-Group": this.resourceGroup,
         },
         body: JSON.stringify({
           messages: [
             {
               role: "system",
-              content: `You are an SAP workforce organizational and talent decision assistant. Analyze the workplace policy change, candidate role application, or talent mobility transition scenario and extract structured JSON parameters with keys:
-- scenarioType: string ("work_model_change", "workspace_redesign", "schedule_compression", "timezone_alignment", "compensation_adjustment", "office_relocation", "ai_tool_introduction", "talent_mobility_hiring", "general_policy_change")
-- title: concise title
-- description: clear summary of what is changing or being evaluated
-- changes: array of { attribute: string, beforeValue: any, afterValue: any }
-- affectedDimensions: array of string dimensions affected (e.g. "professional", "behavior", "collaboration", "workLifeBalance", "logistics", "accessibility")
-Respond ONLY with a valid JSON object.`,
+              content: `You are an SAP workforce organizational decision assistant. Extract a structured UniversalScenarioIR JSON object:
+{
+  "intent": "policy_evaluation" | "tradeoff_inquiry" | "change_proposal" | "exploratory_question" | "unclear_inquiry",
+  "proposal": string,
+  "baseline": string,
+  "changes": [{ "attribute": string, "beforeValue": any, "afterValue": any }],
+  "stakeholders": string[],
+  "potentialEffects": string[],
+  "argumentsFor": string[],
+  "argumentsAgainst": string[],
+  "constraints": string[],
+  "confidence": number (0.0 to 1.0),
+  "unmappedConcepts": string[],
+  "clarificationNeeded": string or null
+}
+Respond ONLY with valid JSON.`,
             },
-            {
-              role: "user",
-              content: text,
-            },
+            { role: "user", content: text },
           ],
           temperature: 0.1,
         }),
       });
 
-      if (!response.ok) {
-        console.warn(`[Simulynx Joule Adapter] AI inference returned ${response.status}, falling back to deterministic ontology.`);
-        return this.fallback.analyzeScenario(text);
-      }
+      if (!response.ok) return this.fallback.parseScenario(text);
 
       const data = await response.json();
       let content = data.choices?.[0]?.message?.content;
-      if (!content) {
-        return this.fallback.analyzeScenario(text);
-      }
+      if (!content) return this.fallback.parseScenario(text);
 
-      // Clean Markdown code fences if present
       content = content.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
-
       const parsed = JSON.parse(content);
+      const fallbackIR = await this.fallback.parseScenario(text);
+
       return {
-        scenarioType: parsed.scenarioType || "work_model_change",
-        title: parsed.title || "Policy Simulation",
-        description: parsed.description || text,
-        changes: parsed.changes || [],
-        affectedDimensions: parsed.affectedDimensions || [],
+        ...fallbackIR,
+        intent: parsed.intent || fallbackIR.intent,
+        proposal: parsed.proposal || fallbackIR.proposal,
+        baseline: parsed.baseline || fallbackIR.baseline,
+        changes: parsed.changes || fallbackIR.changes,
+        stakeholders: parsed.stakeholders || fallbackIR.stakeholders,
+        argumentsFor: parsed.argumentsFor || fallbackIR.argumentsFor,
+        argumentsAgainst: parsed.argumentsAgainst || fallbackIR.argumentsAgainst,
+        confidence: typeof parsed.confidence === "number" ? parsed.confidence : fallbackIR.confidence,
+        unmappedConcepts: parsed.unmappedConcepts || fallbackIR.unmappedConcepts,
+        clarificationNeeded: parsed.clarificationNeeded || fallbackIR.clarificationNeeded,
       };
-    } catch (err) {
-      console.warn("[Simulynx Joule Adapter] analyzeScenario error, using deterministic fallback:", err);
-      return this.fallback.analyzeScenario(text);
+    } catch {
+      return this.fallback.parseScenario(text);
     }
+  }
+
+  async analyzeScenario(text: string): Promise<ScenarioAnalysisResult> {
+    const ir = await this.parseScenario(text);
+    return {
+      scenarioType: ir.intent,
+      title: ir.proposal.length > 55 ? `${ir.proposal.substring(0, 52)}...` : ir.proposal,
+      description: ir.proposal,
+      changes: ir.changes,
+      affectedDimensions: ir.affectedDimensions,
+      ir,
+    };
   }
 
   async explainSimulation(summary: AggregateSimulationSummary): Promise<AIExplanationResult> {

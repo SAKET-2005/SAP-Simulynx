@@ -1,43 +1,5 @@
 import { PersonaData } from "../persona-generator/types.js";
-import { ScenarioChangeDef, ActivatedDimension, AttributePressure } from "../ontology/ontology.js";
-
-export interface PersonaSimulationScore {
-  personaId?: string;
-  externalId: string;
-  name: string;
-  overallImpactScore: number; // 0 - 100
-  flexibilityScore: number; // 0 - 100
-  accessibilityScore: number; // 0 - 100
-  wellbeingScore: number; // 0 - 100
-  adoptionScore: number; // 0 - 100
-  retentionRiskScore: number; // 0 - 100
-  reaction: "positive" | "neutral" | "concerned" | "critical";
-  primaryConcern: string;
-  simulatedThought: string;
-  explanationText: string;
-  drivers: {
-    attribute: string;
-    influence: number;
-    note: string;
-  }[];
-}
-
-export interface ScenarioSimulationContext {
-  scenarioType: string;
-  changes: ScenarioChangeDef[];
-  activatedDimensions: ActivatedDimension[];
-  attributePressures?: AttributePressure[];
-  rawScenarioText?: string;
-}
-
-export interface IImpactModel {
-  name: string;
-  version: string;
-  calculatePersonaImpact(
-    persona: PersonaData,
-    context: ScenarioSimulationContext
-  ): PersonaSimulationScore;
-}
+import { UniversalScenarioIR, PersonaSimulationScore, PersonaImpactDriver } from "../universal-scenario/types.js";
 
 function clamp(val: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Math.round(val)));
@@ -45,302 +7,108 @@ function clamp(val: number, min = 0, max = 100): number {
 
 /**
  * Universal Deterministic Impact Model
- * Evaluates any scenario's attribute pressure vector against the 10-dimensional universal persona model.
+ * 
+ * Scenario-agnostic mathematical scoring engine.
+ * Computes individual simulated impact, friction components, sub-indices,
+ * and transparent driver contributions directly from the UniversalScenarioIR attribute pressures.
+ * 
+ * ZERO scenario-specific code paths.
  */
-export class DeterministicImpactModel implements IImpactModel {
-  name = "UniversalDeterministicSimulynxV2";
-  version = "2.0.0";
+export class UniversalDeterministicImpactModel {
+  name = "UniversalDeterministicImpactModelV3";
+  version = "3.0.0";
 
   calculatePersonaImpact(
     p: PersonaData,
-    context: ScenarioSimulationContext
+    ir: UniversalScenarioIR
   ): PersonaSimulationScore {
-    const { scenarioType, changes, activatedDimensions, rawScenarioText } = context;
-    const text = (rawScenarioText || "").toLowerCase();
-    const activeDimKeys = new Set((activatedDimensions || []).map((d) => d.dimensionKey));
+    const drivers: PersonaImpactDriver[] = [];
+    const pressures = ir.attributePressures || [];
+    const activeDimensions = ir.affectedDimensions || [];
 
-    // Special Evaluation: Talent Mobility, Role Transition & Candidate Hiring
-    if (
-      scenarioType === "talent_mobility_hiring" ||
-      text.includes("applying for") ||
-      text.includes("intern role") ||
-      text.includes("chances of being hired")
-    ) {
-      const isEng = p.department === "Engineering";
-      const isSec = p.department.toLowerCase().includes("security") || p.department.toLowerCase().includes("it");
+    let totalFriction = 0;
+    let totalRelief = 0;
+    let frictionCount = 0;
 
-      const baseFeasibility = isEng ? 88 : isSec ? 92 : 80;
-      const fitScore = clamp(baseFeasibility + (p.learningOrientation / 100) * 8 - (100 - p.collaborationPreference) * 0.05);
-
-      const skillScore = clamp(88 + (isEng ? 4 : 0));
-      const synergyScore = clamp(92 + (isSec ? 4 : 0));
-      const engagementScore = clamp(90 + (p.changeTolerance / 100) * 5);
-      const rampUpScore = clamp(86 + (p.technologyAdoption / 100) * 8);
-      const flightRisk = clamp(14 - (p.learningOrientation / 100) * 5);
-
-      const candidateDrivers = [
-        { attribute: "Polyglot Coding Skills", influence: 92, note: "Fluency across major company languages eliminates technical onboarding friction." },
-        { attribute: "Cybersecurity Background", influence: 88, note: "Brings intrinsic secure-by-design architectural habits into software engineering." },
-        { attribute: "Institutional Experience", influence: 85, note: "Prior internship demonstrates company culture fit and familiarity with internal tools." },
-      ];
-
-      const simThought = isEng
-        ? `An intern who already codes in all our required languages and brings cybersecurity hygiene is an exceptional asset. Immediate hire.`
-        : isSec
-        ? `We strongly endorse this move. Having security-literate developers in core engineering prevents vulnerabilities before they reach production.`
-        : `Strong learning agility and proven internal internship performance make this a low-risk, high-yield hiring decision.`;
-
-      return {
-        externalId: p.externalId,
-        name: p.name,
-        overallImpactScore: fitScore,
-        flexibilityScore: skillScore,
-        accessibilityScore: synergyScore,
-        wellbeingScore: engagementScore,
-        adoptionScore: rampUpScore,
-        retentionRiskScore: flightRisk,
-        reaction: "positive",
-        primaryConcern: "Ensure candidate is assigned to a high-impact engineering mentor during initial sprint cycles.",
-        simulatedThought: simThought,
-        explanationText: `${p.name} (${p.seniority} ${p.role}, ${p.department}) evaluates candidate hiring feasibility at ${fitScore}% [HIGH FIT]. Strong synergy from cybersecurity domain background and polyglot coding proficiency.`,
-        drivers: candidateDrivers,
-      };
-    }
-
-    // Extract potential office day parameters
-    let oldOfficeDays = 2;
-    let newOfficeDays = 5;
-    let hasOfficeDayChange = false;
-
-    for (const c of changes) {
-      if (c.attribute.toLowerCase().includes("office") || c.attribute.toLowerCase().includes("day")) {
-        oldOfficeDays = Number(c.beforeValue) || 2;
-        newOfficeDays = Number(c.afterValue) || 5;
-        hasOfficeDayChange = true;
-      }
-    }
-
-    const deltaDays = Math.max(0, newOfficeDays - oldOfficeDays);
-    const dayRatio = newOfficeDays / 5;
-    const intensityCurve = Math.pow(dayRatio, 1.5);
-
-    // Initialize dimensional friction components
-    let commuteFriction = 0;
     let flexFriction = 0;
-    let caregivingFriction = 0;
     let accessFriction = 0;
-    let timezoneFriction = 0;
-    let financialFriction = 0;
+    let commuteFriction = 0;
     let techFriction = 0;
-    let collabLift = 0;
 
-    const drivers: { attribute: string; influence: number; note: string }[] = [];
+    // Evaluate each attribute pressure against the persona's 10 dimensions
+    for (const pr of pressures) {
+      const personaFactor = this.resolvePersonaFactor(p, pr.attributeName);
+      const componentScore = clamp(pr.intensity * pr.sensitivityWeight * personaFactor * 100);
 
-    // 1. Commute Friction
-    if (activeDimKeys.has("commute")) {
-      if (text.includes("4-day") || text.includes("four-day") || text.includes("compressed")) {
-        // Commute is actually relieved by 20% under 4-day week
-        commuteFriction = Math.max(0, (p.commuteMinutes / 90) * 25);
-      } else if (text.includes("relocat") || text.includes("move")) {
-        commuteFriction = clamp((p.commuteMinutes / 70) * 45 + (100 - p.transportReliability) * 0.25);
-        if (p.commuteMinutes >= 45) {
+      if (pr.direction === "increase_friction") {
+        totalFriction += componentScore;
+        frictionCount++;
+
+        // Track dimension-specific friction for sub-indices
+        if (pr.dimensionKey === "flexibility") flexFriction = Math.max(flexFriction, componentScore);
+        if (pr.dimensionKey === "accessibility") accessFriction = Math.max(accessFriction, componentScore);
+        if (pr.dimensionKey === "commute") commuteFriction = Math.max(commuteFriction, componentScore);
+        if (pr.dimensionKey === "technologyChange") techFriction = Math.max(techFriction, componentScore);
+
+        if (componentScore >= 20) {
           drivers.push({
-            attribute: "Transit & Commute Duration",
-            influence: Math.round(commuteFriction),
-            note: `${p.commuteMinutes}m transit to relocated facility expands daily travel overhead.`,
+            attribute: this.formatAttributeName(pr.attributeName),
+            influence: componentScore,
+            note: pr.rationale,
           });
         }
       } else {
-        const factor = (p.commuteMinutes / 90) * (hasOfficeDayChange ? deltaDays / 3 : 1.0);
-        commuteFriction = clamp(factor * 45 + (100 - p.transportReliability) * 0.2);
-        if (p.commuteMinutes >= 45 && commuteFriction >= 20) {
+        totalRelief += componentScore;
+        if (componentScore >= 20) {
           drivers.push({
-            attribute: "Commute Duration",
-            influence: Math.round(commuteFriction),
-            note: `${p.commuteMinutes}m transit time adds substantial travel overhead.`,
+            attribute: `${this.formatAttributeName(pr.attributeName)} (Relief)`,
+            influence: -componentScore,
+            note: pr.rationale,
           });
         }
       }
     }
 
-    // 2. Flexibility Friction
-    if (activeDimKeys.has("flexibility")) {
-      const flexWeight = (p.flexibilityImportance / 100) * 40;
-      const schedWeight = (p.scheduleConstraints / 100) * 25;
-      const autoWeight = (p.autonomyPreference / 100) * 20;
-      flexFriction = clamp(flexWeight + schedWeight + autoWeight);
+    // Mathematical aggregation across active dimensions
+    const divisor = Math.max(1, activeDimensions.length);
+    const rawFriction = totalFriction / divisor;
+    const netImpact = Math.max(0, rawFriction - (totalRelief / divisor) * 0.4);
+    const overallImpactScore = clamp(netImpact);
 
-      if (p.flexibilityImportance >= 70 && flexFriction >= 25) {
-        drivers.push({
-          attribute: "Flexibility & Schedule Autonomy",
-          influence: Math.round(flexFriction),
-          note: `High reliance on calendar autonomy and personalized delivery windows.`,
-        });
-      }
-    }
-
-    // 3. Caregiving Friction
-    if (activeDimKeys.has("caregiving")) {
-      if (p.caregivingResponsibility) {
-        const isTenHourShift = text.includes("10-hour") || text.includes("compressed") || text.includes("4-day");
-        const shiftMultiplier = isTenHourShift ? 1.4 : 1.0;
-        caregivingFriction = clamp(
-          ((p.caregivingIntensity / 100) * 45 + (p.familyObligations / 100) * 25) * shiftMultiplier
-        );
-
-        drivers.push({
-          attribute: "Caregiving & Family Obligations",
-          influence: Math.round(caregivingFriction),
-          note: isTenHourShift
-            ? `10-hour daily shifts extend past standard daycare and school pickup hours.`
-            : `Dependent obligations clash with fixed presence requirements.`,
-        });
-      }
-    }
-
-    // 4. Accessibility & Sensory Friction
-    if (activeDimKeys.has("accessibility")) {
-      const isHotDesking = text.includes("hot-desk") || text.includes("unassigned") || text.includes("desk-sharing");
-      if (isHotDesking) {
-        accessFriction = clamp(
-          (p.overallAccessibilityNeed / 100) * 55 +
-            (p.sensoryRequirements ? 25 : 0) +
-            (p.environmentalRequirements / 100) * 20
-        );
-        if (p.overallAccessibilityNeed >= 40 || p.sensoryRequirements || p.mobilityRequirements) {
-          drivers.push({
-            attribute: "Ergonomic & Sensory Accommodation",
-            influence: Math.round(accessFriction),
-            note: `Unassigned hot-desking eliminates predictable ergonomic setups and acoustic quiet zones.`,
-          });
-        }
-      } else {
-        accessFriction = clamp(
-          (p.overallAccessibilityNeed / 100) * intensityCurve * 45 +
-            (p.environmentalRequirements / 100) * 20
-        );
-        if (p.overallAccessibilityNeed >= 50) {
-          drivers.push({
-            attribute: "Physical Campus & Sensory Load",
-            influence: Math.round(accessFriction),
-            note: `Daily physical transit and campus acoustics elevate fatigue.`,
-          });
-        }
-      }
-    }
-
-    // 5. Timezone & Global Collaboration Friction
-    if (activeDimKeys.has("collaboration") && (text.includes("timezone") || text.includes("pacific") || text.includes("core hours") || text.includes("global"))) {
-      timezoneFriction = clamp(
-        (p.timezoneDependency / 100) * (p.globalTeamInvolvement ? 50 : 20) +
-          (p.familyObligations / 100) * 30
-      );
-      if (p.timezoneDependency >= 50) {
-        drivers.push({
-          attribute: "Timezone Alignment Strain",
-          influence: Math.round(timezoneFriction),
-          note: `Mandated non-local core hours conflict with local timezone rhythm and evening family time.`,
-        });
-      }
-    }
-
-    // 6. Financial Sensitivity Friction
-    if (activeDimKeys.has("financialSensitivity")) {
-      const bandFactor = p.salaryBand === "entry" ? 30 : p.salaryBand === "mid" ? 15 : 5;
-      financialFriction = clamp((p.financialSensitivity / 100) * 55 + bandFactor);
-      if (p.financialSensitivity >= 60) {
-        drivers.push({
-          attribute: "Financial Vulnerability",
-          influence: Math.round(financialFriction),
-          note: `Unbudgeted policy costs exert regressive pressure on cash flow.`,
-        });
-      }
-    }
-
-    // 7. Technology Adoption & Algorithmic Trust Friction
-    if (activeDimKeys.has("technologyChange")) {
-      const trustGap = 100 - p.technologyTrust;
-      const adoptGap = 100 - p.technologyAdoption;
-      const securityAnxiety = (p.jobSecurityImportance / 100) * 30;
-      techFriction = clamp(trustGap * 0.35 + adoptGap * 0.35 + securityAnxiety);
-
-      if (techFriction >= 25) {
-        drivers.push({
-          attribute: "Technology Trust & Change Drag",
-          influence: Math.round(techFriction),
-          note: `Concern over algorithmic reliability, surveillance, or task disruption.`,
-        });
-      }
-    }
-
-    // Collaboration Lift (Positive counterbalance for pro-office / pro-pairing staff)
-    if (hasOfficeDayChange && deltaDays > 0) {
-      collabLift = clamp((p.collaborationPreference / 100) * (p.officePreference / 100) * 25);
-    }
-
-    // Weighted Overall Impact
-    const activeWeightsSum =
-      (commuteFriction > 0 ? 0.3 : 0) +
-      (flexFriction > 0 ? 0.3 : 0) +
-      (caregivingFriction > 0 ? 0.3 : 0) +
-      (accessFriction > 0 ? 0.3 : 0) +
-      (timezoneFriction > 0 ? 0.35 : 0) +
-      (financialFriction > 0 ? 0.35 : 0) +
-      (techFriction > 0 ? 0.35 : 0) || 1.0;
-
-    const rawImpact =
-      commuteFriction * 0.3 +
-      flexFriction * 0.28 +
-      caregivingFriction * 0.28 +
-      accessFriction * 0.25 +
-      timezoneFriction * 0.3 +
-      financialFriction * 0.3 +
-      techFriction * 0.3 -
-      collabLift * 0.15;
-
-    const normalizedImpact = clamp((rawImpact / activeWeightsSum) * 1.05);
-
-    // Sub-Indices
-    const flexibilityScore = clamp(100 - flexFriction * 1.1 + (100 - p.remotePreference) * 0.1);
-    const accessibilityScore = clamp(100 - accessFriction * 1.15);
-    const wellbeingScore = clamp(
-      95 -
-        commuteFriction * 0.35 -
-        flexFriction * 0.25 -
-        caregivingFriction * 0.3 -
-        timezoneFriction * 0.3 +
-        collabLift * 0.15
-    );
+    // Transparent Sub-indices
+    const flexibilityScore = clamp(100 - flexFriction * 1.1 + (100 - p.remotePreference) * 0.05);
+    const accessibilityScore = clamp(100 - accessFriction * 1.2);
+    const wellbeingScore = clamp(95 - overallImpactScore * 0.45 - (commuteFriction > 40 ? 10 : 0));
     const adoptionScore = clamp(
-      flexibilityScore * 0.25 +
-        wellbeingScore * 0.25 +
-        accessibilityScore * 0.2 +
-        (100 - normalizedImpact) * 0.2 +
-        p.changeTolerance * 0.1
+      (100 - overallImpactScore) * 0.5 +
+        p.changeTolerance * 0.25 +
+        p.technologyAdoption * 0.25
     );
     const retentionRiskScore = clamp(
-      normalizedImpact * 0.65 +
+      overallImpactScore * 0.65 +
         (100 - adoptionScore) * 0.35 +
-        (financialFriction > 40 ? 15 : 0)
+        (p.jobSecurityImportance > 75 ? 10 : 0)
     );
 
-    // Determine Persona Reaction
+    // Determine Persona Reaction Status based strictly on deterministic thresholds
     let reaction: "positive" | "neutral" | "concerned" | "critical" = "neutral";
-    if (normalizedImpact >= 65 || retentionRiskScore >= 65) {
-      reaction = normalizedImpact >= 80 ? "critical" : "concerned";
-    } else if (adoptionScore >= 70 && normalizedImpact < 35) {
+    if (overallImpactScore >= 70 || retentionRiskScore >= 70) {
+      reaction = overallImpactScore >= 80 ? "critical" : "concerned";
+    } else if (overallImpactScore < 30 && adoptionScore >= 70) {
       reaction = "positive";
     }
 
-    // Synthesize human persona thought and explanation
-    const simulatedThought = synthesizeThoughtUniversal(p, reaction, drivers, text);
-    const primaryConcern = drivers.length > 0 ? drivers[0].note : "Balancing day-to-day workflow adaptation";
-    const explanationText = `${p.name} (${p.seniority} ${p.role}, ${p.department}) shows a Simulated Impact score of ${normalizedImpact}/100 [${reaction.toUpperCase()}]. Key drivers include: ${drivers.map((d) => d.attribute).join(", ") || "baseline operational change"}.`;
+    // Sort drivers by descending mathematical influence
+    drivers.sort((a, b) => Math.abs(b.influence) - Math.abs(a.influence));
+
+    const primaryConcern = drivers.length > 0 ? drivers[0].note : "General baseline workflow adaptation";
+    const simulatedThought = this.synthesizePersonaThought(p, reaction, drivers);
+    const explanationText = `${p.name} (${p.seniority} ${p.role}, ${p.department}): Simulated Impact ${overallImpactScore}/100 [${reaction.toUpperCase()}]. Top drivers: ${drivers.slice(0, 2).map((d) => `${d.attribute} (+${d.influence}pts)`).join(", ") || "baseline operational change"}.`;
 
     return {
       externalId: p.externalId,
       name: p.name,
-      overallImpactScore: normalizedImpact,
+      overallImpactScore,
       flexibilityScore,
       accessibilityScore,
       wellbeingScore,
@@ -353,40 +121,84 @@ export class DeterministicImpactModel implements IImpactModel {
       drivers,
     };
   }
-}
 
-function synthesizeThoughtUniversal(
-  p: PersonaData,
-  reaction: string,
-  drivers: { attribute: string; influence: number; note: string }[],
-  scenarioText: string
-): string {
-  if (reaction === "critical" || reaction === "concerned") {
-    if (scenarioText.includes("hot-desk") && (p.overallAccessibilityNeed > 40 || p.sensoryRequirements)) {
-      return `Losing a fixed desk makes managing sensory noise and ergonomic posture much harder every day.`;
+  /**
+   * Resolves the quantitative magnitude (0.0 to 1.0) of a persona's attribute.
+   */
+  private resolvePersonaFactor(p: PersonaData, attrName: string): number {
+    switch (attrName) {
+      case "commuteMinutes":
+        return Math.min(1.0, p.commuteMinutes / 90);
+      case "transportReliability":
+        return (100 - p.transportReliability) / 100;
+      case "relocationWillingness":
+        return (100 - p.relocationWillingness) / 100;
+      case "caregivingResponsibility":
+        return p.caregivingResponsibility ? Math.max(0.6, p.caregivingIntensity / 100) : 0.05;
+      case "caregivingIntensity":
+        return p.caregivingIntensity / 100;
+      case "familyObligations":
+        return p.familyObligations / 100;
+      case "flexibilityImportance":
+        return p.flexibilityImportance / 100;
+      case "autonomyPreference":
+        return p.autonomyPreference / 100;
+      case "asyncPreference":
+        return p.asyncPreference / 100;
+      case "scheduleConstraints":
+        return p.scheduleConstraints / 100;
+      case "overallAccessibilityNeed":
+        return p.overallAccessibilityNeed / 100;
+      case "sensoryRequirements":
+        return p.sensoryRequirements ? 0.95 : 0.05;
+      case "mobilityRequirements":
+        return p.mobilityRequirements ? 0.95 : 0.05;
+      case "financialSensitivity":
+        return p.financialSensitivity / 100;
+      case "incomeDependency":
+        return p.incomeDependency / 100;
+      case "technologyTrust":
+        return (100 - p.technologyTrust) / 100;
+      case "technologyAdoption":
+        return (100 - p.technologyAdoption) / 100;
+      case "learningOrientation":
+        return p.learningOrientation / 100;
+      case "changeTolerance":
+        return (100 - p.changeTolerance) / 100;
+      case "jobSecurityImportance":
+        return p.jobSecurityImportance / 100;
+      case "timezoneDependency":
+        return p.timezoneDependency / 100;
+      case "meetingTolerance":
+        return (100 - p.meetingTolerance) / 100;
+      case "collaborationPreference":
+        return p.collaborationPreference / 100;
+      default:
+        return 0.5;
     }
-    if ((scenarioText.includes("10-hour") || scenarioText.includes("4-day")) && p.caregivingResponsibility) {
-      return `A 10-hour daily shift makes nursery and school pickup virtually impossible without outside help.`;
-    }
-    if (scenarioText.includes("timezone") || scenarioText.includes("pacific")) {
-      return `Late evening mandatory calls directly collide with family dinner and parenting routines.`;
-    }
-    if (p.caregivingResponsibility && p.commuteMinutes > 40) {
-      return `Between ${p.commuteMinutes}m transit and picking up my ${p.dependentsCount} kids, this rigid schedule creates severe friction.`;
-    }
-    if (p.commuteMinutes > 55) {
-      return `The transit hours required by this change add substantial weekly overhead without clear pairing benefit.`;
-    }
-    return `This policy conflicts directly with the autonomous scheduling I rely on for focused delivery.`;
   }
-  if (reaction === "positive") {
-    if (scenarioText.includes("4-day")) {
-      return `A 3-day weekend gives me sustained recovery time, and I save on one weekly transit day!`;
-    }
-    if (p.collaborationPreference > 70) {
-      return `Closer alignment and spontaneous co-location should accelerate team problem-solving.`;
-    }
-    return `I can adapt smoothly and look forward to greater operational alignment.`;
+
+  private formatAttributeName(attrName: string): string {
+    return attrName
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (str) => str.toUpperCase())
+      .trim();
   }
-  return `I want to understand what accommodations and flexibility windows will be available under this change.`;
+
+  private synthesizePersonaThought(
+    p: PersonaData,
+    reaction: string,
+    drivers: PersonaImpactDriver[]
+  ): string {
+    if (reaction === "critical" || reaction === "concerned") {
+      if (drivers.length > 0) {
+        return `This change conflicts with my ${drivers[0].attribute.toLowerCase()}, creating noticeable day-to-day friction.`;
+      }
+      return `This policy introduces structural constraints that conflict with my existing work-life arrangement.`;
+    }
+    if (reaction === "positive") {
+      return `This change aligns well with my workflow preferences and should support effective collaboration.`;
+    }
+    return `I am monitoring how practical flexibility accommodations will be implemented before forming a view.`;
+  }
 }
