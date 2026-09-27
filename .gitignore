@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build and deployment output
+gen/
+dist/
+mta_archives/
+*.mtar
+@cds-models/
+
+# Database files
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+
+# Logs and environment
+*.log
+.env
+.env.*
+!.env.example
+
+# IDE & OS
+.DS_Store
+Thumbs.db

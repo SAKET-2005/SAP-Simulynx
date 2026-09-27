@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulynx — Inclusive Decisions. Simulated Before Implementation.</title>
+  
+  <!-- SAP Fiori / SAPUI5 Bootstrap -->
+  <script
+    id="sap-ui-bootstrap"
+    src="https://ui5.sap.com/resources/sap-ui-core.js"
+    data-sap-ui-theme="sap_horizon"
+    data-sap-ui-resourceroots='{
+      "sap.simulynx": "./"
+    }'
+    data-sap-ui-oninit="module:sap/ui/core/ComponentSupport"
+    data-sap-ui-compatversion="edge"
+    data-sap-ui-async="true"
+    data-sap-ui-preload="async"
+    data-sap-ui-libs="sap.m,sap.ui.layout,sap.tnt"
+  ></script>
+
+  <link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+<body class="sapUiBody sapUiSizeCompact" id="content">
+  <div
+    data-sap-ui-component
+    data-name="sap.simulynx"
+    data-id="container"
+    data-settings='{"id" : "simulynx"}'
+    style="height: 100vh; width: 100vw;"
+  ></div>
+</body>
+</html>

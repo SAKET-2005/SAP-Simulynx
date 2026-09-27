@@ -1,0 +1,8 @@
+{
+  "xsappname": "simulynx",
+  "description": "Security profile for Simulynx SAP BTP Application",
+  "scopes": [],
+  "attributes": [],
+  "role-templates": [],
+  "authorities-inheritance": false
+}
