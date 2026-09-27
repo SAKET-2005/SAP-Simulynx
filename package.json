@@ -17,8 +17,9 @@
     "typescript": "^7.0.0"
   },
   "scripts": {
-    "start": "cds-serve",
-    "watch": "cds watch",
+    "deploy": "cds deploy",
+    "start": "cds deploy && cds-serve",
+    "watch": "cds deploy && cds watch",
     "build": "cds build --production && node -e \"fs.cpSync('app', 'gen/srv/app', { recursive: true })\"",
     "seed": "tsx ./srv/seed.ts",
     "test": "tsx --test test/*.test.ts"

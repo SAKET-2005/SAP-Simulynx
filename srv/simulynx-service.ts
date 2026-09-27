@@ -634,8 +634,23 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
     // Auto-seed if database is empty on server startup
     setImmediate(async () => {
       try {
-        const countRes = await SELECT.from(Personas).columns("count(*) as total");
-        if (!countRes[0]?.total || countRes[0]?.total === 0) {
+        let countRes: any;
+        try {
+          countRes = await SELECT.from(Personas).columns("count(*) as total");
+        } catch (tableErr: any) {
+          if (tableErr.message?.includes("no such table")) {
+            console.log("[Simulynx] Database tables not found. Deploying CDS schema automatically...");
+            const db = await cds.connect.to("db");
+            const model = await cds.load("*");
+            await cds.deploy(model).to(db);
+            console.log("[Simulynx] Schema deployed successfully.");
+            countRes = [{ total: 0 }];
+          } else {
+            throw tableErr;
+          }
+        }
+
+        if (!countRes || !countRes[0]?.total || countRes[0]?.total === 0) {
           console.log("[Simulynx] Empty database detected on startup - auto-seeding 300 universal personas...");
           await runDemoSeed(this);
           console.log("[Simulynx] Auto-seeding completed successfully.");
