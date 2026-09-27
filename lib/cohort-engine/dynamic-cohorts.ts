@@ -214,6 +214,38 @@ const MASTER_COHORT_REGISTRY: DynamicCohortDef[] = [
       };
     },
   },
+  {
+    cohortKey: "engineering_benchmark",
+    name: "Engineering & Developer Benchmark Cohort",
+    description: "Personas in engineering departments and junior/intern development roles serving as technical benchmark standards.",
+    criteriaDescription: "Department = 'Engineering' OR Seniority = 'junior'",
+    associatedDimension: "professional",
+    evaluator: (p) => {
+      const matches = p.department === "Engineering" || p.seniority === "junior";
+      const score = matches ? Math.round((p.learningOrientation + p.technologyAdoption) / 2) : 0;
+      return {
+        matches,
+        score,
+        factors: `Department: ${p.department}, Seniority: ${p.seniority}, Tech Adoption: ${p.technologyAdoption}%`,
+      };
+    },
+  },
+  {
+    cohortKey: "cyber_systems_peer",
+    name: "Cybersecurity & Systems Peer Cohort",
+    description: "Personas in cybersecurity and IT operations evaluating domain cross-pollination and secure-by-design synergy.",
+    criteriaDescription: "Department = 'IT & Security' OR Department = 'Operations'",
+    associatedDimension: "technologyChange",
+    evaluator: (p) => {
+      const matches = p.department === "IT & Security" || p.department === "Operations";
+      const score = matches ? p.technologyTrust : 0;
+      return {
+        matches,
+        score,
+        factors: `Department: ${p.department}, Security Affinity: High`,
+      };
+    },
+  },
 ];
 
 /**

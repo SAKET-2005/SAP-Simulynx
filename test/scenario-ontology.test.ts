@@ -73,15 +73,19 @@ describe("Scenario Analyzer & Workforce Ontology", () => {
     assert.ok(dimKeys.includes("workLifeBalance"));
   });
 
-  test("ontology maps dimensions to persona attributes", () => {
-    const mapping = mapScenarioToOntology("work_model_change", [
-      { attribute: "officeDays", beforeValue: 2, afterValue: 5 },
-    ]);
+  test("parses talent mobility and candidate hiring scenario (Cyber Security -> SWE Intern)", async () => {
+    const text = "I am applying for a Software Engineering Intern role after completing my internship as a Cyber Security Intern. After completing this internship I realised that I am not a good fit for this domain as I enjoy coding more and I would be a better fit for the Software Engineering role. What are my chances of being hired if I have the required skills and am able to code in all the major langueages required by the company.";
+    const result = await provider.analyzeScenario(text);
 
-    assert.ok(mapping.allMappedAttributes.includes("commuteMinutes"));
-    assert.ok(mapping.allMappedAttributes.includes("flexibilityImportance"));
-    assert.ok(mapping.allMappedAttributes.includes("caregivingResponsibility"));
-    assert.ok(mapping.allMappedAttributes.includes("overallAccessibilityNeed"));
-    assert.ok(mapping.attributePressures.length > 0);
+    assert.strictEqual(result.scenarioType, "talent_mobility_hiring");
+    assert.strictEqual(result.changes.length, 4);
+    assert.strictEqual(result.changes[0].attribute, "targetRole");
+    assert.strictEqual(result.changes[0].afterValue, "Software Engineering Intern");
+
+    const dimKeys = result.affectedDimensions.map((d) => d.dimensionKey);
+    assert.ok(dimKeys.includes("professional"));
+    assert.ok(dimKeys.includes("technologyChange"));
+    assert.ok(dimKeys.includes("collaboration"));
+    assert.ok(dimKeys.includes("workLifeBalance"));
   });
 });

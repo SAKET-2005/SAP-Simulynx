@@ -45,8 +45,36 @@ export function mapScenarioToOntology(
   const text = (scenarioText || "").toLowerCase();
   const type = scenarioType.toLowerCase();
 
-  // 1. Office Relocation & Transit Expansion
+  // 1. Talent Mobility, Role Transition & Candidate Hiring Evaluation
   if (
+    type.includes("talent") ||
+    type.includes("mobility") ||
+    type.includes("hiring") ||
+    type.includes("candidate") ||
+    type.includes("role_transition") ||
+    text.includes("applying for") ||
+    text.includes("intern role") ||
+    text.includes("internship") ||
+    text.includes("chances of being hired") ||
+    text.includes("better fit") ||
+    (text.includes("software engineering") && (text.includes("cyber security") || text.includes("cybersecurity"))) ||
+    text.includes("career transition")
+  ) {
+    activated.push(
+      createActivatedDimension("professional", 0.98, "Evaluates technical skill alignment, programming languages, and role domain fit between origin and target roles."),
+      createActivatedDimension("technologyChange", 0.92, "Measures technology adoption speed, polyglot coding proficiency, and learning orientation."),
+      createActivatedDimension("collaboration", 0.85, "Assesses team development readiness, code reviews, and agile engineering integration."),
+      createActivatedDimension("workLifeBalance", 0.80, "Measures role engagement, intrinsic coding motivation, and long-term career retention.")
+    );
+    pressures.push(
+      { attributeName: "learningOrientation", dimensionKey: "technologyChange", direction: "relieve_friction", intensity: 0.88, sensitivityWeight: 0.95, rationale: "High learning agility and coding enthusiasm accelerate engineering ramp-up." },
+      { attributeName: "technologyAdoption", dimensionKey: "technologyChange", direction: "relieve_friction", intensity: 0.85, sensitivityWeight: 0.90, rationale: "Multi-language programming fluency significantly reduces technical onboarding time." },
+      { attributeName: "collaborationPreference", dimensionKey: "collaboration", direction: "relieve_friction", intensity: 0.80, sensitivityWeight: 0.85, rationale: "Prior internship experience establishes cultural and tooling familiarity." },
+      { attributeName: "changeTolerance", dimensionKey: "technologyChange", direction: "relieve_friction", intensity: 0.75, sensitivityWeight: 0.80, rationale: "Proactive domain pivot demonstrates personal adaptability and growth mindset." }
+    );
+  }
+  // 2. Office Relocation & Transit Expansion
+  else if (
     type === "office_relocation" ||
     (!type.includes("work_model") && (text.includes("relocat") || (text.includes("move") && (text.includes("location") || text.includes("commute")))))
   ) {

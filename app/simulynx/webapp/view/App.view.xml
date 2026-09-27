@@ -239,11 +239,11 @@
                     placeholder="e.g. Our company is moving from 2 mandatory office days to 5."
                     class="sapUiSmallMarginBottom" />
 
-                  <HBox justifyContent="SpaceBetween" alignItems="Center">
-                    <HBox>
-                      <Button text="2 -> 5 Office Days" press=".onFillSampleScenario" custom:prompt="Our company is moving from 2 mandatory office days to 5." class="sapUiTinyMarginEnd" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
-                      <Button text="Relocation" press=".onFillSampleScenario" custom:prompt="Move the company office to a new location that increases average commute time." class="sapUiTinyMarginEnd" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
-                      <Button text="AI Coding Assistant" press=".onFillSampleScenario" custom:prompt="Introduce an AI coding assistant across engineering teams." class="sapUiTinyMarginEnd" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                    <HBox wrap="Wrap">
+                      <Button text="2 -> 5 Office Days" press=".onFillSampleScenario" custom:prompt="Our company is moving from 2 mandatory office days to 5." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="Relocation" press=".onFillSampleScenario" custom:prompt="Move the company office to a new location that increases average commute time." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="AI Assistant" press=".onFillSampleScenario" custom:prompt="Introduce an AI coding assistant across engineering teams." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
+                      <Button text="Candidate: Cyber -> SWE" press=".onFillSampleScenario" custom:prompt="I am applying for a Software Engineering Intern role after completing my internship as a Cyber Security Intern. After completing this internship I realised that I am not a good fit for this domain as I enjoy coding more and I would be a better fit for the Software Engineering role. What are my chances of being hired if I have the required skills and am able to code in all the major langueages required by the company." class="sapUiTinyMarginEnd sapUiTinyMarginBottom" xmlns:custom="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" />
                     </HBox>
                     <HBox>
                       <Button text="Analyze Scenario" type="Emphasized" icon="sap-icon://search" press=".onAnalyzeScenario" class="sapUiTinyMarginEnd" />
@@ -341,27 +341,27 @@
                 <Panel headerText="Workforce Simulation Intelligence" class="sapUiSmallMarginBottom">
                   <layout:Grid defaultSpan="XL2 L2 M4 S6" class="sapUiSmallMarginBottom">
                     <VBox class="simKpiCard">
-                      <Text text="Overall Impact" class="simKpiTitle" />
+                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_hiring' ? 'Hiring Feasibility' : 'Overall Impact'}" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/overallImpactScore}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="Affected %" class="simKpiTitle" />
+                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_hiring' ? 'Benchmark Match' : 'Affected %'}" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/affectedPercentage}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="Flexibility" class="simKpiTitle" />
+                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_hiring' ? 'Skill Alignment' : 'Flexibility'}" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/avgFlexibility}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="Accessibility" class="simKpiTitle" />
+                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_hiring' ? 'Security Synergy' : 'Accessibility'}" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/avgAccessibility}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="Wellbeing" class="simKpiTitle" />
+                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_hiring' ? 'Role Motivation' : 'Wellbeing'}" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/avgWellbeing}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="Retention Risk" class="simKpiTitle" />
+                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_hiring' ? 'Flight Risk' : 'Retention Risk'}" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/avgRetentionRisk}%" level="H2" class="simKpiValue" />
                     </VBox>
                   </layout:Grid>

@@ -139,12 +139,12 @@ export class SapAIProvider implements IAIProvider {
           messages: [
             {
               role: "system",
-              content: `You are an SAP workforce organizational decision assistant. Analyze the enterprise workplace policy scenario and extract structured JSON parameters with keys:
-- scenarioType: string (e.g., "work_model_change", "workspace_redesign", "schedule_compression", "timezone_alignment", "compensation_adjustment", "office_relocation", "ai_tool_introduction", "general_policy_change")
+              content: `You are an SAP workforce organizational and talent decision assistant. Analyze the workplace policy change, candidate role application, or talent mobility transition scenario and extract structured JSON parameters with keys:
+- scenarioType: string ("work_model_change", "workspace_redesign", "schedule_compression", "timezone_alignment", "compensation_adjustment", "office_relocation", "ai_tool_introduction", "talent_mobility_hiring", "general_policy_change")
 - title: concise title
-- description: clear summary of what is changing
+- description: clear summary of what is changing or being evaluated
 - changes: array of { attribute: string, beforeValue: any, afterValue: any }
-- affectedDimensions: array of string dimensions affected (e.g. "logistics", "life_context", "work_style", "accessibility", "behavior")
+- affectedDimensions: array of string dimensions affected (e.g. "professional", "behavior", "collaboration", "workLifeBalance", "logistics", "accessibility")
 Respond ONLY with a valid JSON object.`,
             },
             {
