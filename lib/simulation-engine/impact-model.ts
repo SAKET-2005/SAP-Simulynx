@@ -197,8 +197,14 @@ export class UniversalDeterministicImpactModel {
       return `This policy introduces structural constraints that conflict with my existing work-life arrangement.`;
     }
     if (reaction === "positive") {
+      if (drivers.length > 0) {
+        return `This transition aligns well with my ${drivers[0].attribute.toLowerCase()}, supporting productive operational delivery.`;
+      }
       return `This change aligns well with my workflow preferences and should support effective collaboration.`;
     }
-    return `I am monitoring how practical flexibility accommodations will be implemented before forming a view.`;
+    if (drivers.length > 0) {
+      return `From my perspective as ${p.role} in ${p.department}, this proposal moderately touches ${drivers[0].attribute.toLowerCase()}; monitoring implementation details.`;
+    }
+    return `As a ${p.seniority} in ${p.department}, I view this proposal as operationally manageable within standard team workflows.`;
   }
 }

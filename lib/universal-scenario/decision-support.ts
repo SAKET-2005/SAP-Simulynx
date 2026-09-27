@@ -85,6 +85,10 @@ export function buildUniversalOutputContract(
   if (activeDimKeys.has("flexibility")) {
     mitigationOptions.push("Delegate team-level discretion to line managers to structure contextual norms rather than enforcing an organization-wide mandate.");
   }
+  if (activeDimKeys.has("professional")) {
+    mitigationOptions.push("Provide structured pair-programming onboarding to bridge domain transitions into core engineering sprint cadences.");
+    mitigationOptions.push("Implement competency-based technical assessments evaluating software architecture and problem-solving beyond specific domain background.");
+  }
 
   if (mitigationOptions.length === 0) {
     mitigationOptions.push("Offer structured pilot periods with feedback checkpoints before permanent policy codification.");
@@ -97,6 +101,11 @@ export function buildUniversalOutputContract(
     "How will the organization provide formal, non-penalizing accommodations for employees belonging to the most sensitive cohorts?",
     "Does the proposed timeline allow managers and teams sufficient time to adapt their coordination rhythms?",
   ];
+
+  if (activeDimKeys.has("professional")) {
+    questionsForHumanReview.push("How do the candidate's demonstrated multi-language coding skills benchmark against current engineering intern prerequisites?");
+    questionsForHumanReview.push("What structured mentorship will be provided to support the candidate's transition from cybersecurity compliance to feature delivery?");
+  }
 
   if (ir.intent === "tradeoff_inquiry") {
     questionsForHumanReview.push("Can the proposed policy be implemented as an intentional team guideline rather than an inflexible organizational rule?");

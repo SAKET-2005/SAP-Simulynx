@@ -149,4 +149,27 @@ describe("Universal Scenario & Workforce Simulation Engine", () => {
     assert.ok(relocationDims.includes("financialSensitivity"), "Relocation must activate financialSensitivity");
     assert.ok(!relocationDims.includes("accessibility"), "Relocation should not activate accessibility as primary");
   });
+
+  test("Scenario I: Candidate Role Transition (Cyber Security -> SWE Intern) flows through Universal Pipeline", () => {
+    const prompt = "I am applying for a Software Engineering Intern role after completing my internship as a Cyber Security Intern. After completing this internship I realised that I am not a good fit for this domain as I enjoy coding more and I would be a better fit for the Software Engineering role. What are my chances of being hired if I have the required skills and am able to code in all the major langueages required by the company.";
+    const ir = parseScenarioToIR(prompt);
+
+    assert.strictEqual(ir.intent, "exploratory_question");
+    assert.ok(!ir.proposal.includes("AI coding assistant"), "Must NOT mistake candidate application for enterprise AI tooling");
+    assert.ok(ir.proposal.includes("Software Engineering Intern"), "Proposal should recognize target SWE Intern role");
+
+    const activeDimKeys = ir.affectedDimensions.map((d) => d.dimensionKey);
+    assert.ok(activeDimKeys.includes("professional"), "Must activate professional skills dimension");
+    assert.ok(activeDimKeys.includes("technologyChange"), "Must activate technical adaptability dimension");
+    assert.ok(activeDimKeys.includes("collaboration"), "Must activate team synergy dimension");
+
+    const cohorts = generateDynamicCohorts(ir.affectedDimensions, workforce);
+    const simRun = simulationEngine.runSimulation(workforce, cohorts, ir);
+    const counterfactuals = redTeamEngine.runCounterfactualAnalysis(workforce, ir);
+    const contract = buildUniversalOutputContract(ir, simRun, counterfactuals);
+
+    assert.ok(contract.decisionSupport.summary.length > 0);
+    assert.ok(contract.decisionSupport.mitigationOptions.length > 0, "Must provide actionable onboarding/assessment options");
+    assert.ok(contract.decisionSupport.questionsForHumanReview.length > 0, "Must provide human review questions");
+  });
 });

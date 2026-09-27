@@ -183,6 +183,8 @@ entity Simulations : cuid, managed {
 entity SimulationResults : cuid {
   simulation                 : Association to Simulations;
   persona                    : Association to Personas;
+  externalId                 : String(50);
+  name                       : String(100);
   overallImpactScore         : Decimal(5,2);
   flexibilityScore           : Decimal(5,2);
   accessibilityScore         : Decimal(5,2);

@@ -40,7 +40,7 @@ export function parseScenarioToIR(rawText: string): UniversalScenarioIR {
     intent = "tradeoff_inquiry";
   } else if (lower.includes("we want") || lower.includes("we are moving") || lower.includes("introduce") || lower.includes("transition")) {
     intent = "change_proposal";
-  } else if (lower.startsWith("how would") || lower.startsWith("what might") || lower.startsWith("what would")) {
+  } else if (lower.startsWith("how would") || lower.startsWith("what might") || lower.startsWith("what would") || lower.includes("what are my chances")) {
     intent = "exploratory_question";
   }
 
@@ -112,8 +112,9 @@ export function parseScenarioToIR(rawText: string): UniversalScenarioIR {
     proposal = "Mandatory camera-on requirement during virtual meetings";
   }
 
-  // AI Tooling / Assistants
-  if (lower.includes("ai") && (lower.includes("coding") || lower.includes("assistant") || lower.includes("copilot") || lower.includes("engineering"))) {
+  // AI Tooling / Assistants (word-boundary check, guarded against candidate application)
+  const isCandidateApp = lower.includes("applying for") || lower.includes("intern role") || lower.includes("internship");
+  if (!isCandidateApp && (/\bai\b/i.test(text) || lower.includes("copilot") || lower.includes("coding assistant")) && (lower.includes("assistant") || lower.includes("copilot") || lower.includes("tooling") || lower.includes("rollout") || lower.includes("enterprise"))) {
     changes.push({
       attribute: "aiToolingCoverage",
       beforeValue: "0%",
@@ -121,6 +122,28 @@ export function parseScenarioToIR(rawText: string): UniversalScenarioIR {
     });
     baseline = "Manual development without enterprise generative AI assistants";
     proposal = "Enterprise rollout of generative AI coding assistants across engineering";
+  }
+
+  // Talent Mobility, Candidate Role Transition & Hiring Assessment
+  if (isCandidateApp || lower.includes("chances of being hired") || lower.includes("role transition")) {
+    const isCyberToSwe = lower.includes("cyber") && (lower.includes("software") || lower.includes("coding"));
+    if (isCyberToSwe) {
+      changes.push(
+        { attribute: "targetRole", beforeValue: "Cyber Security Intern", afterValue: "Software Engineering Intern" },
+        { attribute: "domainAlignment", beforeValue: "Cybersecurity Protocol & Compliance", afterValue: "Core Software Feature Development" },
+        { attribute: "demonstratedSkills", beforeValue: "Security Protocols", afterValue: "Multi-Language Programming Competency" }
+      );
+      baseline = "Completed Cyber Security Internship background";
+      proposal = "Candidate hiring evaluation: Transfer from Cyber Security Intern to Software Engineering Intern";
+    } else {
+      changes.push({
+        attribute: "candidateApplication",
+        beforeValue: "Current Role / Background",
+        afterValue: "Target Role Evaluation",
+      });
+      baseline = "Existing candidate qualifications and domain experience";
+      proposal = "Candidate hiring feasibility and role fit assessment";
+    }
   }
 
   // Surveillance / Monitoring

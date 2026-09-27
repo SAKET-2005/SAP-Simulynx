@@ -227,6 +227,7 @@ sap.ui.define([
         .then(function (data) {
           BusyIndicator.hide();
           oModel.setProperty("/activeSimulation", {
+            scenarioType: data.scenarioType,
             overallImpactScore: data.overallImpactScore,
             affectedPercentage: data.affectedPercentage,
             highImpactCount: data.highImpactCount,

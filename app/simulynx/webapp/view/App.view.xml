@@ -388,27 +388,27 @@
                 <Panel headerText="Workforce Simulation Intelligence" class="sapUiSmallMarginBottom">
                   <layout:Grid defaultSpan="XL2 L2 M4 S6" class="sapUiSmallMarginBottom">
                     <VBox class="simKpiCard">
-                      <Text text="Overall Impact" class="simKpiTitle" />
+                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_role_transition' ? 'Role Transition Match' : 'Overall Impact'}" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/overallImpactScore}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="Affected %" class="simKpiTitle" />
+                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_role_transition' ? 'Affected Benchmark' : 'Affected %'}" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/affectedPercentage}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="Flexibility Index" class="simKpiTitle" />
+                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_role_transition' ? 'Skill Transferability' : 'Flexibility Index'}" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/avgFlexibility}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="Accessibility Index" class="simKpiTitle" />
+                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_role_transition' ? 'Technical Readiness' : 'Accessibility Index'}" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/avgAccessibility}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="Wellbeing Index" class="simKpiTitle" />
+                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_role_transition' ? 'Role Motivation' : 'Wellbeing Index'}" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/avgWellbeing}%" level="H2" class="simKpiValue" />
                     </VBox>
                     <VBox class="simKpiCard">
-                      <Text text="Retention Risk" class="simKpiTitle" />
+                      <Text text="{= ${appState>/activeSimulation/scenarioType} === 'talent_mobility_role_transition' ? 'Retention Stability' : 'Retention Risk'}" class="simKpiTitle" />
                       <Title text="{appState>/activeSimulation/avgRetentionRisk}%" level="H2" class="simKpiValue" />
                     </VBox>
                   </layout:Grid>

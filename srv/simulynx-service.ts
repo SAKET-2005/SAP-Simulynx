@@ -481,6 +481,8 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
           ID: crypto.randomUUID(),
           simulation_ID: simulationId,
           persona_ID: p?.ID,
+          externalId: res.externalId,
+          name: res.name,
           overallImpactScore: res.overallImpactScore,
           flexibilityScore: res.flexibilityScore,
           accessibilityScore: res.accessibilityScore,

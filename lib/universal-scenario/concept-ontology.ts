@@ -344,7 +344,7 @@ export const CONCEPT_ONTOLOGY_REGISTRY: ConceptDefinition[] = [
   // 5. AI Tooling & Generative Assistants
   {
     conceptKey: "ai_tooling_adoption",
-    matchPatterns: ["ai", "ai coding", "copilot", "coding assistant", "generative ai", "assistant", "automation", "llm tooling"],
+    matchPatterns: [/\bai\b/i, "ai coding", "copilot", "coding assistant", "generative ai", "ai assistant", "llm tooling", "llm", "automation tool"],
     description: "Enterprise introduction of generative AI tools, coding assistants, and automated workflow aids.",
     associatedDimensions: [
       {
@@ -599,5 +599,97 @@ export const CONCEPT_ONTOLOGY_REGISTRY: ConceptDefinition[] = [
       "Elevates turnover risk among senior talent in satellite and distributed regions.",
     ],
     typicalStakeholders: ["Distributed international engineers", "HQ leadership", "Working parents in overseas offices"],
+  },
+
+  // 9. Talent Mobility, Role Transition & Candidate Hiring Evaluation
+  {
+    conceptKey: "talent_mobility_role_transition",
+    matchPatterns: [
+      "applying for",
+      "intern role",
+      "internship",
+      "cyber security intern",
+      "software engineering intern",
+      "chances of being hired",
+      "role transition",
+      "transfer role",
+      "transition from",
+      "good fit for",
+      "talent mobility",
+      "switch role",
+      "career change",
+      "job application",
+      "fit for the role",
+      "hired",
+      "hiring",
+    ],
+    description: "Candidate application, hiring feasibility, or internal talent mobility between technical domains.",
+    associatedDimensions: [
+      {
+        dimensionKey: "professional",
+        dimensionName: "Professional Skills & Role Domain Fit",
+        sensitivityWeight: 0.95,
+        rationale: "Evaluation of technical competencies, programming language fluency, and engineering craft fit.",
+        mappedAttributes: ["skills", "experienceYears", "learningOrientation"],
+      },
+      {
+        dimensionKey: "technologyChange",
+        dimensionName: "Technical Adaptability & Coding Language Mastery",
+        sensitivityWeight: 0.90,
+        rationale: "Capacity to code fluently across company-required programming languages and adapt to engineering architectures.",
+        mappedAttributes: ["technologyAdoption", "learningOrientation", "changeTolerance"],
+      },
+      {
+        dimensionKey: "collaboration",
+        dimensionName: "Engineering Squad & Team Synergy",
+        sensitivityWeight: 0.80,
+        rationale: "Collaboration habits, code review participation, and integration into Agile engineering cadences.",
+        mappedAttributes: ["collaborationPreference", "crossFunctionalDependency"],
+      },
+      {
+        dimensionKey: "workLifeBalance",
+        dimensionName: "Role Engagement & Intrinsic Motivation",
+        sensitivityWeight: 0.85,
+        rationale: "Strong domain passion ('enjoy coding more') predicts accelerated ramp-up, high job satisfaction, and retention.",
+        mappedAttributes: ["learningImportance", "careerGrowthImportance"],
+      },
+    ],
+    attributePressures: [
+      {
+        attributeName: "learningOrientation",
+        dimensionKey: "technologyChange",
+        direction: "relieve_friction",
+        intensity: 0.85,
+        sensitivityWeight: 0.90,
+        rationale: "High learning agility and coding motivation significantly accelerate technical ramp-up.",
+      },
+      {
+        attributeName: "technologyAdoption",
+        dimensionKey: "technologyChange",
+        direction: "relieve_friction",
+        intensity: 0.80,
+        sensitivityWeight: 0.85,
+        rationale: "Mastery of required programming languages fulfills core technical qualification criteria.",
+      },
+      {
+        attributeName: "changeTolerance",
+        dimensionKey: "professional",
+        direction: "increase_friction",
+        intensity: 0.35,
+        sensitivityWeight: 0.70,
+        rationale: "Transitioning mental models from cybersecurity threat modeling to software engineering feature delivery requires adaptation.",
+      },
+    ],
+    argumentsFor: [
+      "Demonstrated multi-language coding skills directly fulfill core software engineering intern prerequisites.",
+      "Prior internal internship experience provides proven cultural alignment and organizational familiarity.",
+      "Strong intrinsic passion for coding ('enjoy coding more') predicts accelerated ramp-up speed and high role engagement.",
+    ],
+    argumentsAgainst: [
+      "Domain transition gap: Requires assessing foundational software design, data structures, and testing beyond syntax familiarity.",
+      "Engineering intern hiring is typically competitive, requiring candidate benchmarking against peer applicant pools.",
+      "Transition from cybersecurity compliance workflows to Agile sprint delivery may require structured ramp-up mentorship.",
+    ],
+    typicalStakeholders: ["Candidate / Intern applicant", "Engineering Hiring Managers", "Engineering Mentors & Team Leads", "Campus Recruiting"],
   },
 ];
