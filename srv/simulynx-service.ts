@@ -4,7 +4,7 @@ import { generateDynamicCohorts } from "../lib/cohort-engine/dynamic-cohorts.js"
 import { SimulationEngine } from "../lib/simulation-engine/simulation-engine.js";
 import { RedTeamEngine } from "../lib/counterfactual/redteam-engine.js";
 import { PersonaData } from "../lib/persona-generator/types.js";
-import { getAIProvider } from "../lib/ai/index.js";
+import { getAIProvider, getAIStatus, testAIConnection as runAITestConnection } from "../lib/ai/index.js";
 import { parseScenarioToIR } from "../lib/universal-scenario/universal-parser.js";
 import { buildUniversalOutputContract } from "../lib/universal-scenario/decision-support.js";
 import crypto from "node:crypto";
@@ -130,6 +130,48 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
         topCohorts,
         sensitiveAttributes,
         recentSimulations,
+      };
+    });
+
+    /**
+     * getAIStatus()
+     */
+    this.on("getAIStatus", async () => {
+      const status = getAIStatus();
+      return {
+        success: status.success,
+        activeProvider: status.activeProvider,
+        isConfigured: status.isConfigured,
+        mode: status.mode,
+        authType: status.authType,
+        apiEndpoint: status.apiEndpoint || "",
+        deploymentId: status.deploymentId || "",
+        resourceGroup: status.resourceGroup || "",
+        missingVariables: status.missingVariables || [],
+        latencyMs: status.latencyMs || 0,
+        message: status.message,
+        errorDetail: status.errorDetail || "",
+      };
+    });
+
+    /**
+     * testAIConnection()
+     */
+    this.on("testAIConnection", async () => {
+      const result = await runAITestConnection();
+      return {
+        success: result.success,
+        activeProvider: result.activeProvider,
+        isConfigured: result.isConfigured,
+        mode: result.mode,
+        authType: result.authType,
+        apiEndpoint: result.apiEndpoint || "",
+        deploymentId: result.deploymentId || "",
+        resourceGroup: result.resourceGroup || "",
+        missingVariables: result.missingVariables || [],
+        latencyMs: result.latencyMs || 0,
+        message: result.message,
+        errorDetail: result.errorDetail || "",
       };
     });
 
@@ -385,9 +427,10 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
         personas = await SELECT.from(Personas);
       }
 
-      // Parse prompt into Universal Scenario Intermediate Representation (IR)
+      // Parse prompt into Universal Scenario Intermediate Representation (IR) via active AI Provider
       const promptText = scenario.rawScenarioText || scenario.description || scenario.title;
-      const ir = parseScenarioToIR(promptText);
+      const ai = getAIProvider();
+      const ir = await ai.parseScenario(promptText);
 
       // 1. Dynamic Cohorts based on activated dimensions
       const generatedCohorts = generateDynamicCohorts(
@@ -411,6 +454,41 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
       // 4. Build Universal Output Contract
       const contract = buildUniversalOutputContract(ir, simRun, redTeamResults);
 
+      // 5. Generate AI Executive Explanation via Joule / Generative AI Hub if available
+      const explanation = await ai.explainSimulation({
+        scenarioTitle: scenario.title,
+        scenarioType: ir.intent,
+        totalPersonas: simRun.totalPersonas,
+        overallImpactScore: simRun.overallImpactScore,
+        affectedPercentage: simRun.affectedPercentage,
+        highImpactCount: simRun.highImpactCount,
+        mediumImpactCount: simRun.mediumImpactCount,
+        lowImpactCount: simRun.lowImpactCount,
+        avgFlexibilityScore: simRun.avgFlexibilityScore,
+        avgAccessibilityScore: simRun.avgAccessibilityScore,
+        avgWellbeingScore: simRun.avgWellbeingScore,
+        avgAdoptionScore: simRun.avgAdoptionScore,
+        avgRetentionRiskScore: simRun.avgRetentionRiskScore,
+        topCohorts: simRun.cohortSummaries.map((c) => ({
+          name: c.name,
+          population: c.population,
+          averageImpact: c.averageImpact,
+          riskLevel: c.riskLevel,
+        })),
+        counterfactuals: redTeamResults,
+        ir,
+      });
+
+      const execSummary = explanation.executiveSummary || contract.decisionSupport.summary;
+      const keyFindingsList =
+        explanation.keyFindings && explanation.keyFindings.length > 0
+          ? explanation.keyFindings
+          : contract.decisionSupport.keyFindings || [];
+      const questionsList =
+        explanation.questionsForReview && explanation.questionsForReview.length > 0
+          ? explanation.questionsForReview
+          : contract.decisionSupport.questionsForHumanReview || [];
+
       const simulationId = crypto.randomUUID();
       const runAt = new Date().toISOString();
 
@@ -431,9 +509,9 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
         avgAdoptionScore: simRun.avgAdoptionScore,
         avgRetentionRiskScore: simRun.avgRetentionRiskScore,
         status: "COMPLETED",
-        aiExecutiveSummary: contract.decisionSupport.summary,
-        aiKeyFindings: (contract.decisionSupport.keyFindings || []).join("\n• "),
-        aiQuestionsForReview: (contract.decisionSupport.questionsForHumanReview || []).join("\n• "),
+        aiExecutiveSummary: execSummary,
+        aiKeyFindings: keyFindingsList.join("\n• "),
+        aiQuestionsForReview: questionsList.join("\n• "),
       });
 
       // Update scenario status
@@ -535,9 +613,9 @@ export default class SimulynxService extends (cds.ApplicationService as any) {
         avgWellbeing: simRun.avgWellbeingScore,
         avgAdoption: simRun.avgAdoptionScore,
         avgRetentionRisk: simRun.avgRetentionRiskScore,
-        executiveSummary: contract.decisionSupport.summary,
-        keyFindings: (contract.decisionSupport.keyFindings || []).join("\n• "),
-        questionsForReview: (contract.decisionSupport.questionsForHumanReview || []).join("\n• "),
+        executiveSummary: execSummary,
+        keyFindings: keyFindingsList.join("\n• "),
+        questionsForReview: questionsList.join("\n• "),
         mitigationOptions: (contract.decisionSupport.mitigationOptions || []).join("\n• "),
         argumentsFor: (ir.argumentsFor || []).join("\n• "),
         argumentsAgainst: (ir.argumentsAgainst || []).join("\n• "),

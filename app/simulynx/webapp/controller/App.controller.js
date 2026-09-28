@@ -9,8 +9,10 @@ sap.ui.define([
   "sap/m/Text",
   "sap/m/Title",
   "sap/ui/layout/Grid",
-  "sap/ui/core/BusyIndicator"
-], function (Controller, MessageToast, MessageBox, Dialog, Button, VBox, HBox, Text, Title, Grid, BusyIndicator) {
+  "sap/ui/core/BusyIndicator",
+  "sap/m/ObjectStatus",
+  "sap/m/FormattedText"
+], function (Controller, MessageToast, MessageBox, Dialog, Button, VBox, HBox, Text, Title, Grid, BusyIndicator, ObjectStatus, FormattedText) {
   "use strict";
 
   return Controller.extend("sap.simulynx.controller.App", {
@@ -25,6 +27,9 @@ sap.ui.define([
     refreshAllData: function () {
       var oModel = this.getView().getModel("appState");
       var sBase = this.getBaseUrl();
+
+      // Check Joule / AI Provider status
+      this.refreshAIStatus();
 
       // 1. Dashboard Overview
       fetch(sBase + "/getDashboardOverview()")
@@ -382,6 +387,120 @@ sap.ui.define([
         return p.department === sKey;
       });
       oModel.setProperty("/personas", filtered);
+    },
+
+    refreshAIStatus: function () {
+      var oModel = this.getView().getModel("appState");
+      var sBase = this.getBaseUrl();
+
+      fetch(sBase + "/getAIStatus()")
+        .then(function (res) { return res.json(); })
+        .then(function (status) {
+          if (status) {
+            oModel.setProperty("/aiStatus", status);
+            if (status.isConfigured && status.success) {
+              oModel.setProperty("/aiBadgeText", "Joule: Connected");
+              oModel.setProperty("/aiBadgeState", "Success");
+              oModel.setProperty("/aiBadgeIcon", "sap-icon://accept");
+            } else if (status.isConfigured) {
+              oModel.setProperty("/aiBadgeText", "Joule: Bound");
+              oModel.setProperty("/aiBadgeState", "Information");
+              oModel.setProperty("/aiBadgeIcon", "sap-icon://sys-enter-2");
+            } else {
+              oModel.setProperty("/aiBadgeText", "AI: Fallback Mode");
+              oModel.setProperty("/aiBadgeState", "Warning");
+              oModel.setProperty("/aiBadgeIcon", "sap-icon://alert");
+            }
+          }
+        })
+        .catch(function (err) {
+          console.error("AI Status check error:", err);
+          oModel.setProperty("/aiBadgeText", "AI: Fallback Mode");
+          oModel.setProperty("/aiBadgeState", "Warning");
+          oModel.setProperty("/aiBadgeIcon", "sap-icon://alert");
+        });
+    },
+
+    onOpenAIDiagnostics: function () {
+      var oModel = this.getView().getModel("appState");
+      var sBase = this.getBaseUrl();
+      var aiStatus = oModel.getProperty("/aiStatus") || {};
+      var that = this;
+
+      var oStatusText = new Text({
+        text: aiStatus.message || "Simulynx is running in Offline Fallback mode. No SAP AI Core credentials detected in .env.",
+        class: "sapUiSmallMarginBottom"
+      });
+
+      var oDetailsText = new FormattedText({
+        htmlText: "<p><b>Provider:</b> " + (aiStatus.activeProvider || "Deterministic Fallback") + "<br/>" +
+          "<b>Mode:</b> " + (aiStatus.mode || "FALLBACK_DETERMINISTIC") + "<br/>" +
+          "<b>Endpoint:</b> " + (aiStatus.apiEndpoint || "None configured") + "<br/>" +
+          "<b>Deployment ID:</b> " + (aiStatus.deploymentId || "default") + "<br/>" +
+          "<b>Missing Keys:</b> " + ((aiStatus.missingVariables && aiStatus.missingVariables.length > 0) ? aiStatus.missingVariables.join(", ") : "None") + "</p>" +
+          "<p style='color:#666;font-size:12px;'><i>Tip: To connect live Joule AI, create a <code>.env</code> file in the project root with your SAP BTP AI Core service key or run <code>npm run test:ai</code> in terminal.</i></p>"
+      });
+
+      var oResultBox = new VBox({
+        visible: false,
+        items: [
+          new Title({ text: "Connection Test Result", level: "H5" }),
+          new Text({ id: "testResultText", text: "" })
+        ]
+      });
+
+      var oDialog = new Dialog({
+        title: "SAP Joule & AI Core Diagnostics",
+        type: "Message",
+        contentWidth: "520px",
+        content: new VBox({
+          items: [
+            oStatusText,
+            oDetailsText,
+            oResultBox
+          ]
+        }).addStyleClass("sapUiSmallMargin"),
+        beginButton: new Button({
+          text: "Run Live Connection Test",
+          icon: "sap-icon://connected",
+          type: "Emphasized",
+          press: function () {
+            oDialog.setBusy(true);
+            fetch(sBase + "/testAIConnection", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({})
+            })
+              .then(function (res) { return res.json(); })
+              .then(function (result) {
+                oDialog.setBusy(false);
+                that.refreshAIStatus();
+                oResultBox.setVisible(true);
+                var oTxt = sap.ui.getCore().byId("testResultText");
+                if (result.success) {
+                  oTxt.setText("✅ SUCCESS (" + (result.latencyMs || 0) + "ms): " + result.message);
+                } else {
+                  oTxt.setText("❌ " + result.message + (result.errorDetail ? "\nDetails: " + result.errorDetail : ""));
+                }
+              })
+              .catch(function (err) {
+                oDialog.setBusy(false);
+                oResultBox.setVisible(true);
+                var oTxt = sap.ui.getCore().byId("testResultText");
+                oTxt.setText("Network error executing test: " + err.message);
+              });
+          }
+        }),
+        endButton: new Button({
+          text: "Close",
+          press: function () {
+            oDialog.close();
+            oDialog.destroy();
+          }
+        })
+      });
+
+      oDialog.open();
     }
   });
 });

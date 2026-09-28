@@ -16,6 +16,19 @@
         <Title text="{i18n>appTitle}" level="H2" class="simLogoTitle" />
         <Text text="Universal Workforce Simulation Engine" class="simSubtitle" />
         <ToolbarSpacer />
+        <ObjectStatus
+          text="{appState>/aiBadgeText}"
+          state="{appState>/aiBadgeState}"
+          icon="{appState>/aiBadgeIcon}"
+          inverted="true"
+          class="sapUiTinyMarginEnd"
+          tooltip="Active AI Engine Mode" />
+        <Button
+          text="Joule AI Status"
+          icon="sap-icon://chain-link"
+          type="Transparent"
+          press=".onOpenAIDiagnostics"
+          tooltip="Check connection and diagnostics for SAP Joule / AI Core" />
         <ObjectStatus text="SAP BTP / CAP v10" state="Information" inverted="true" class="sapUiTinyMarginEnd" />
         <Button
           text="Seed 300 Personas"

@@ -22,7 +22,8 @@
     "watch": "cds deploy && cds watch",
     "build": "cds build --production && node -e \"fs.cpSync('app', 'gen/srv/app', { recursive: true })\"",
     "seed": "tsx ./srv/seed.ts",
-    "test": "tsx --test test/*.test.ts"
+    "test": "tsx --test test/*.test.ts",
+    "test:ai": "tsx ./scripts/test-ai.ts"
   },
   "private": true,
   "imports": {

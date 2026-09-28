@@ -131,8 +131,24 @@ service SimulynxService @(path: '/odata/v4/simulynx') {
     simulationCount      : Integer;
   }
 
+  type AIStatusResponse {
+    success              : Boolean;
+    activeProvider       : String;
+    isConfigured         : Boolean;
+    mode                 : String;
+    authType             : String;
+    apiEndpoint          : String;
+    deploymentId         : String;
+    resourceGroup        : String;
+    missingVariables     : array of String;
+    latencyMs            : Integer;
+    message              : String;
+    errorDetail          : LargeString;
+  }
+
   // Functions & Actions
   function getDashboardOverview() returns DashboardOverview;
+  function getAIStatus() returns AIStatusResponse;
   
   action analyzeScenario(
     scenarioText: LargeString
@@ -161,4 +177,6 @@ service SimulynxService @(path: '/odata/v4/simulynx') {
   ) returns WorkforceGenResponse;
 
   action seedDemoData() returns SeedResponse;
+
+  action testAIConnection() returns AIStatusResponse;
 }

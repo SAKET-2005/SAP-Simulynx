@@ -26,3 +26,5 @@ mta_archives/
 # IDE & OS
 .DS_Store
 Thumbs.db
+scratch/
+

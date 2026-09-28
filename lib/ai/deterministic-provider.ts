@@ -97,4 +97,26 @@ export class DeterministicAIProvider implements IAIProvider {
     const attrs = material.map((m) => `${m.attributeDisplayName} (isolated delta: +${m.difference} points)`).join(", ");
     return `Counterfactual sensitivity analysis confirms that ${attrs} materially influence simulated outcomes. Neutralizing these specific constraints in isolation creates substantial friction reduction. Leaders should investigate targeted accommodation options prior to rollout.`;
   }
+
+  getStatus() {
+    return {
+      success: false,
+      activeProvider: this.name,
+      isConfigured: false,
+      mode: "FALLBACK_DETERMINISTIC" as const,
+      authType: "NONE" as const,
+      missingVariables: [
+        "AICORE_BASE_URL (or SAP_AI_API_URL)",
+        "AICORE_AUTH_URL",
+        "AICORE_CLIENT_ID",
+        "AICORE_CLIENT_SECRET",
+      ],
+      message: "Running in Offline Fallback Mode. SAP AI Core / Joule credentials not found in environment or .env.",
+    };
+  }
+
+  async testConnection() {
+    return this.getStatus();
+  }
 }
+

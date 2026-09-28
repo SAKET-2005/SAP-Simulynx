@@ -16,6 +16,10 @@ sap.ui.define([
       var oAppState = new JSONModel({
         selectedKey: "overview",
         busy: false,
+        aiBadgeText: "AI: Checking...",
+        aiBadgeState: "None",
+        aiBadgeIcon: "sap-icon://synchronize",
+        aiStatus: null,
         totalWorkforce: 300,
         scenariosSimulated: 1,
         latestScenarioTitle: "5-Day Office Policy",
